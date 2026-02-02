@@ -15,3 +15,10 @@
 ```ini
 # chatbot.env
 GEMINI_API_KEY=your_api_key_here
+```
+
+## 📝 Todo List (RAG System)
+- [ ] **데이터 처리:** 학교 공지사항(PDF/HWP) 텍스트 추출 및 청킹(Chunking)
+- [ ] **Vector DB:** 임베딩 데이터 저장소 구축 (ChromaDB/FAISS)
+- [ ] **검색 로직:** `extract_context()` 구현 (사용자 질문과 유사한 문서 검색)
+- [ ] **모델 연동:** 검색된 정보를 프롬프트에 주입하여 답변 정확도 향상
