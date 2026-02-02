@@ -16,6 +16,28 @@
 # chatbot.env
 GEMINI_API_KEY=your_api_key_here
 ```
+### 2. 가상환경 및 라이브러리 설치
+의존성 충돌 방지를 위해 가상환경 사용을 권장합니다.
+
+```Bash
+# 1. 가상환경 생성 (선택 사항)
+python -m venv venv
+
+# 2. 가상환경 활성화 (Windows)
+.\venv\Scripts\activate
+# (Mac/Linux: source venv/bin/activate)
+
+# 3. 필수 패키지 설치 (필수!)
+pip install -r requirements.txt
+```
+
+### 3. 챗봇 실행
+터미널에서 아래 명령어로 챗봇을 시작합니다.
+
+```Bash
+python chatbot_main.py
+종료 방법: 대화창에 q 또는 c 입력
+```
 
 ## 📝 Todo List (RAG System)
 - [ ] **데이터 처리:** 학교 공지사항(PDF/HWP) 텍스트 추출 및 청킹(Chunking)
