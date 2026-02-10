@@ -1,3 +1,8 @@
+# ./requirements.txt
+
 google-genai
 python-dotenv
+chromadb
+langchain-chroma
+langchain-google-genai
 numpy
