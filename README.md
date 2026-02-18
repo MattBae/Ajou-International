@@ -1,40 +1,122 @@
-# azan
+# 🤖 Azan Project
 
-Monorepo for the Ajou notice pipeline. It includes a FastAPI backend, a worker service, a RAG package skeleton, and a mobile client skeleton.
+Azan은 아주대학교 외국인 유학생들이 언어 장벽과 정보 부족으로 겪는 어려움을 해결하기 위한 AI 기반 학사 정보 챗봇 및 개인화 알림 서비스입니다.
 
-## Quick Start (Docker Compose)
+Monorepo 구조로 설계되었으며, RAG(Retrieval-Augmented Generation) 기술을 활용해 학교 공지사항, 학사 규정, 생활 정보를 정확하게 제공합니다.
 
-```bash
-cd infra/docker
-docker compose up --build
+---
+
+## 📚 프로젝트 개요 (Overview)
+- Project Name: Azan (유학생의 알림과 안내를 책임지는 소리)
+- Goal: 유학생의 성공적인 학업 수행과 안정적인 한국 생활 적응 지원
+- Target: 아주대학교 외국인 유학생 (한국어/영어 지원)
+
+### 핵심 기능 (Key Features)
+1. AI 챗봇 어시스턴트 (RAG Chatbot)
+- 교내 공지사항, 법무부 비자 정보, TOPIK 일정 등을 통합 검색
+- Multi-Source RAG: 학교 내부 데이터와 외부 법률 데이터를 교차 참조하여 답변 생성
+- Context-Aware: 이전 대화 맥락을 기억하여 자연스러운 질의응답 지원
+- TOON Format: 긴 공지사항을 보기 쉬운 표 형태로 요약 제공
+
+2. 개인화 맞춤 알림 (Mom-Style Notification)
+- 사용자의 관심 키워드(Visa, Scholarship 등)에 맞춰 중요 공지 필터링
+- "엄마가 챙겨주듯" 친근한 어조로 마감 기한 및 필수 서류 안내 (다국어 지원)
+
+---
+
+## 🏗️ 프로젝트 구조 (Project Structure)
+
+기능별로 모듈화된 Monorepo 구조입니다.
+
+```Plaintext
+Ajou-International/
+│
+├── 📂 apps/                    # 애플리케이션 모듈
+│   ├── 📂 api/                 # [Backend] FastAPI 메인 서버
+│   ├── 📂 mobile/              # [Frontend] React Native 모바일 앱
+│   ├── 📂 rag/                 # [AI Core] RAG 파이프라인
+│   │   ├── 📂 src/
+│   │   │   ├── 📂 chatbot/     # 챗봇 서비스 로직 (Service Layer)
+│   │   │   └── 📂 rag/         # 임베딩/검색/설정 로직 (Core Layer)
+│   │   ├── 📜 ingest.py        # 데이터 적재 스크립트
+│   │   ├── 📜 init_db.py       # DB 초기화 스크립트
+│   │   └── 📜 test_chatbot.py  # 챗봇 통합 테스트
+│   └── 📂 worker/              # [Worker] 백그라운드 작업 (알림 발송 등)
+│
+├── 📂 source_code/             # 원본 데이터 소스
+│   └── 📂 Database/            # 공지사항 및 사용자 JSON 데이터
+│
+├── 📂 infra/                   # 인프라 설정
+│   └── 📂 docker/              # Docker 관련 파일
+│
+├── 📂 scripts/                 # 개발 유틸리티 스크립트
+│
+├── 📜 .env                     # 환경 변수 (API Key, DB 접속 정보)
+├── 📜 docker-compose.yml       # 통합 컨테이너 실행 설정
+├── 📜 postgresql_init.sql      # PostgreSQL 초기 SQL
+└── 📜 requirements.txt         # 전체 프로젝트 의존성 목록
 ```
 
-Starts:
-- `postgres` on `localhost:5432`
-- `api` on `localhost:8000` (`GET /health`)
-- `worker` stub service
+---
 
-## Run API Locally
+## 🚀 시작 가이드 (Quick Start)
 
-```bash
-cd apps/api
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
-PORT=8000 python -m app.main
+### 1. 환경 변수 설정 (.env)
+프로젝트 최상위 루트(Ajou-International/)에 .env 파일을 생성하고 아래 내용을 입력합니다.
+
+```Ini, TOML
+# Database (Docker와 연동됨)
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=azan
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+
+# Google Gemini API
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# RAG Settings
+GENERATION_MODEL=gemini-2.0-flash
+EMBEDDING_MODEL=gemini-embedding-001
 ```
 
-## Run Worker Locally
+### 2. 인프라 실행 (Docker)
+PostgreSQL(pgvector) 데이터베이스를 실행합니다. 프로젝트 루트에서 다음 명령어를 실행하세요.
 
-```bash
-cd apps/worker
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
-python -m worker.main
+```Bash
+docker-compose up -d
 ```
 
-## Team Ownership
+### 3. RAG 모듈 설정 및 실행
+챗봇 기능을 사용하기 위해 데이터베이스를 초기화하고 데이터를 적재합니다.
 
-- `apps/api`: API/backend teammate
-- `apps/worker`: background jobs teammate
-- `apps/rag`: retrieval/LLM teammate
-- `apps/mobile`: mobile/frontend teammate
+### 3-1. 필수 라이브러리 설치
+가상환경을 생성하고 루트에 있는 requirements.txt를 설치합니다.
+```Bash
+# 가상환경 생성 및 활성화 (Windows)
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# 패키지 설치
+pip install -r requirements.txt
+```
+
+### 3-2. DB 초기화 (Table 생성)
+apps/rag/init_db.py를 실행하여 PostgreSQL에 테이블을 생성합니다. (기존 테이블 Drop 후 재생성)
+```Bash
+python apps/rag/init_db.py
+```
+
+### 3-3. 데이터 적재 (Ingest)
+source_code/Database/notice_db.json 데이터를 읽어 벡터화한 후 DB에 저장합니다.
+
+```Bash
+python apps/rag/ingest.py
+```
+
+### 3-4. 챗봇 테스트 실행
+CLI 환경에서 Azan 챗봇이 정상 동작하는지 테스트합니다.
+
+```Bash
+python apps/rag/test_chatbot.py
+```

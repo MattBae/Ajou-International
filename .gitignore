@@ -21,8 +21,6 @@ dist/
 build/
 
 # Environment
-.env
-.env.*
 !.env.example
 
 # OS / editors
