@@ -1,15 +1,40 @@
-version: '3.9'
-
 services:
-  chromadb:
-    image: chromadb/chroma
-    container_name: ajou_vector_db
+  postgres:
+    # 일반 postgres 대신 벡터 기능이 포함된 이미지 사용
+    image: pgvector/pgvector:pg16
+    container_name: azan_db # 접속 편의성을 위해 컨테이너 이름 설정
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-azan}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # DB 초기화 시 SQL 자동 실행을 위함
+      - ../../postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/azan
+      PORT: ${PORT:-8000}
     ports:
       - "8000:8000"
-    volumes:
-      - ./chroma_data:/index_data
+    depends_on:
+      - postgres
+
+  worker:
+    build:
+      context: ./apps/worker
+      dockerfile: Dockerfile
     environment:
-      - IS_PERSISTENT=TRUE
-      - PERSIST_DIRECTORY=/index_data
-      - CHROMA_SERVER_AUTH_PROVIDER=
-      - ALLOW_RESET=TRUE
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/azan}
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:

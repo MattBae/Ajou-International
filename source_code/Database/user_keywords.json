@@ -1,0 +1,16 @@
+[
+  {
+    "user_id": "user-1",
+    "keywords": ["topik", "visa", "life"]
+  },
+  {
+    "user_id": "user-2",
+    "keywords": ["scholarship", "topik", "visa"]
+  },
+  {
+    "user_id": "user-3",
+    "keywords": ["scholarship", "topik", "visa", "life", "registration", "graduation"]
+  }
+]
+
+

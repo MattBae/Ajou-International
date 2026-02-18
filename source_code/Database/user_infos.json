@@ -1,0 +1,20 @@
+[
+  {
+    "user_id": "user-1",
+    "email": "bayern10@ajou.ac.kr",
+    "name": "User1",
+    "language": "EN"
+  },
+  {
+    "user_id": "user-2",
+    "email": "steadfastsh@gmail.com",
+    "name": "User2",
+    "language": "KO"
+  },
+  {
+    "user_id": "user-3",
+    "email": "junsang65@ajou.ac.kr",
+    "name": "Mina Park",
+    "language": "EN"
+  }
+]

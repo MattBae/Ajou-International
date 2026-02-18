@@ -1,8 +1,4 @@
-# ./requirements.txt
-
-google-genai
-python-dotenv
-chromadb
-langchain-chroma
+psycopg2-binary
 langchain-google-genai
-numpy
+langchain-core
+python-dotenv

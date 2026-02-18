@@ -1,0 +1,48 @@
+[
+  {
+    "notice_id": "ajou-2025-topik-deadline",
+    "title": "2026년 TOPIK 접수 D-7 알림",
+    "contents": "📣 Ajou-international TOPIK 안내 (D-7)\n\n1. 시험 일정: 2026년 1월 11일(토) 09:10 ~ 13:40 / 장소: 아주대학교 대강당\n2. 접수 기간: 2025년 10월 20일 ~ 10월 31일 17:00 (선착순 100명)\n3. 접수 방법\n   - 온라인 신청서 작성 후 확인 메일 발송: https://forms.gle/a1b2c3d4e5f6\n   - 이메일 제목: \"TOPIK 신청 - 학번 이름\"\n4. 준비물\n   - 여권 사본 1부\n   - 여권 사진 2장(최근 6개월, 배경 흰색)\n   - 접수비 55,000원 (현금 또는 계좌이체: 하나은행 123-456789-0 아주대 GSIS)\n   - 기숙사 거주자는 거주 확인서와 계약서 사본 추가 제출\n5. 중요 안내\n   - TOPIK 2급 이상이 졸업 요건 중 하나이므로 미리 준비할 것\n   - 신청 후 취소 시 환불 불가\n   - 문의: 국제대학원 행정팀 (031-219-2921 ~ 3) / 이메일: gsis@ajou.ac.kr\n\n해당 내용 전체는 Slack #notifications 채널(2025.11.20 게시)에서 확인할 수 있습니다.",
+    "created": "2025-11-21T09:00:00+09:00",
+    "notice_source": "Slack",
+    "hash": "hash_topik_slack_v2",
+    "is_processed": true,
+    "deadline": "2025-11-30",
+    "category": "topik"
+  },
+  {
+    "notice_id": "ajou-2025-health-check",
+    "title": "기숙사 건강검진 제출 안내",
+    "contents": "🏠 아주 기숙사 건강검진 증빙 제출\n\n- 제출 대상: 2025-2학기 기숙사 거주 학생 전원 (AIMS2 등록자 포함)\n- 제출 기한: 2025년 11월 7일(금) 17:00 까지\n- 제출 서류\n  1) 흉부 X-ray 검사 결과서 사본 (최근 1년 이내 촬영본)\n  2) 예방접종 증명서 또는 결핵 음성확인서\n  3) (해외 입국자) 자가격리 면제 확인서 및 국내 연락처\n- 제출 방법: Ajou Housing Portal → My Page → \"건강검진 자료 업로드\"\n- 미제출 시 조치: 2025년 11월 12일 이후 즉시 퇴사 조치 가능, 입사 제한\n- 문의: 기숙사 행정실 031-219-2291~4 / dorm@ajou.ac.kr\n- 원문 위치: Slack #notifications (2025.11.19 게시)\n\n추가로, 서류가 미비하거나 해킹이 의심될 경우 별도 연락 예정이며, 필요한 경우 오프라인 제출(원본)도 요구할 수 있습니다.",
+    "created": "2025-11-20T15:30:00+09:00",
+    "notice_source": "Slack",
+    "hash": "hash_healthcheck_slack_v1",
+    "is_processed": true,
+    "deadline": "2025-11-29",
+    "category": "life"
+  },
+  {
+    "notice_id": "ajou-2025-gsis-scholarship",
+    "title": "GSIS Scholarship Opportunities for Spring 2026",
+    "contents": "📑 Ajou GSIS Scholarship Guide (Spring 2026)\n\n전체 공지: https://gsis.ajou.ac.kr/gsis/academics/scholarship.do\n\n[National Scholarship]\n- KOICA: 국제통상 및 국제개발 협력 전공 대상. 각국 정부 추천 필요. GPA 3.5 이상, 전액 장학 + 생활비 지원.\n- NIIED: 해외 한인 및 국제 교육 교류를 담당하는 기관. 한국어 과정 1년 수료 후 학위과정 진학 가능.\n- SWCIC-ASSM: 수원시 자매도시 국제 교류 장학. 100% 등록금, 기숙사 지원.\n\n[Ajou Academic Scholarship]\n- Scholarship A: 직전 학기 9학점 이상, GPA 3.75 이상, 건강보험 가입자. 100% 등록금 면제.\n- Scholarship B: GPA 3.5 이상, 75% 등록금 면제.\n- Scholarship C: GPA 3.3 이상, 50% 등록금 면제.\n- New Student Scholarship: 각 학과 대표 신입생, 50% 등록금 면제.\n- Gazette Scholarship: 기자단 활동 학생, 편집장 500,000원/학기, 에디터 300,000원/학기.\n- Alumni or Company Sponsored Scholarship: 동문회 및 기업 연계, 수시 공지.\n\n[공통 안내]\n- 직전 학기 등록금 완납 및 건강보험 가입 증빙 필수\n- 휴학 시 복학 학기 전 등록금 납부 필요\n- 문의: GSIS Academic Affairs (031-219-1551 / gsis@ajou.ac.kr)\n\n현재 notice는 LLM Processor 수행 전 상태로, 마감일과 카테고리만 설정됨.",
+    "created": "2025-11-27T17:30:00+09:00",
+    "notice_source": "Ajou_Notice",
+    "hash": "hash_gsis_scholarship_web_v1",
+    "is_processed": false,
+    "deadline": "2025-12-01",
+    "category": "scholarship"
+  },
+  {
+    "notice_id": "ajou-2025-arc-final",
+    "title": ":exclamation: [최종 독촉] 외국인등록증(ARC) 관련 서류 미제출자 긴급 공지 (기한 엄수)",
+    "contents": ":exclamation: [최종 독촉] 외국인등록증(ARC) 관련 서류 미제출자 긴급 공지 (기한 엄수)\n\n안녕하세요, 국제교류팀입니다. 신입생 및 재학생의 법무부 체류 자격 신고 및 학적 정보 현행화를 위해 요청드린 필수 서류 제출 기한이 마감되었습니다.\n\n현재, 아직까지 관련 서류를 제출하지 않은 학생들이 다수 확인되어 최종 독촉 공지를 발송합니다. 아래 서류는 여러분의 합법적인 체류 자격 확인, 비자 연장 단체 접수 지원, 각종 장학금 수혜 자격 검토를 위해 반드시 필요한 법적 필수 서류입니다.\n\n기한 내 미제출 시 발생하는 불이익:\n- 비자(D-2) 연장 단체 접수 명단 제외 (개인이 직접 출입국사무소 방문 예약 및 신청해야 함)\n- 각종 교내 장학금(성적, 근로 등) 수혜 자격 심사 보류\n- 학적 시스템상 '서류 미비'로 인한 증명서 발급 제한\n\n1. 제출 대상\n- 아직 외국인등록증 사본을 제출하지 않은 모든 외국인 유학생\n- 최근 비자 연장/변경으로 외국인등록증 뒷면 정보가 변경된 학생\n\n2. 필수 제출 서류 (총 3가지)\n① 외국인등록증(ARC) 사본 (앞면/뒷면) * 반드시 뒷면의 체류 기간 만료일이 보이도록 스캔 또는 촬영\n② 여권 사본 (인적사항 페이지)\n③ 현 거주지 증명서류 (택 1)\n   * 기숙사 거주 확인서\n   * 본인 명의의 부동산 임대차 계약서 사본\n   * (고시원/쉐어하우스) 거주 확인서 및 사업자등록증 사본\n\n3. 최종 제출 기한\n- 2025년 11월 5일 (수) 17:00 KST (시간 절대 엄수)\n\n4. 제출 방법 (온라인 업로드)\n- 국제교류팀 서류 제출 포털: https://portal.ouruni.ac.kr/intl-docs\n- 파일 형식: PDF 또는 JPG, 파일명: 2025XXXX_이름.zip\n\n5. 문의\n- 국제교류팀 (학생회관 201호 / 031-123-4567)\n\n본인의 유학 생활 및 체류 자격과 직결되는 매우 중요한 사항입니다. 공지를 확인하는 즉시 서류를 제출해 주시기 바랍니다.",
+    "created": "2025-10-29T18:00:00+09:00",
+    "notice_source": "Slack",
+    "hash": "hash_arc_slack_v2",
+    "is_processed": true,
+    "deadline": "2025-12-05",
+    "category": "visa"
+  }
+]
+
+
