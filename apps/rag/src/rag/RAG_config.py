@@ -1,13 +1,11 @@
 # ./apps/rag/src/rag/RAG_config.py
 
 import os
-import logging
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 1. 경로 설정 (프로젝트 루트 찾기)
+# 1. 경로 설정 (root 설정)
 current_file = Path(__file__).resolve()
-# apps/rag/src/rag/ -> 4단계 상위가 루트
 project_root = current_file.parents[4] 
 env_path = project_root / ".env"
 
@@ -29,18 +27,15 @@ class Config:
     TEMPERATURE = 0.3
     RETRIEVER_TOP_K = 3
 
-    # Database (ENV 변수명 통일)
+    # Database
     POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
     POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-    POSTGRES_DB = os.getenv("POSTGRES_DB", "azan") # 기본값도 azan으로 통일
+    POSTGRES_DB = os.getenv("POSTGRES_DB", "azan")
 
-    @property
-    def DATABASE_URL(self):
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-
-    # [중요] psycopg2가 사용하는 파라미터 딕셔너리 생성
+    # psycopg2가 사용하는 파라미터 딕셔너리 생성
+    # 차후 경로 수정 시 동적 계산을 위해 property 데코레이터로 설정
     @property
     def DB_PARAMS(self):
         return {

@@ -2,10 +2,8 @@ import logging
 import psycopg2
 from typing import List
 from langchain_core.documents import Document
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
-# [핵심] 우리가 만든 설정 파일 임포트
-from src.rag.RAG_config import settings
+from .RAG_config import settings
+from .embedder import Embedder
 
 logger = logging.getLogger("RAG")
 
@@ -13,10 +11,7 @@ class VectorStore:
     def __init__(self):
         # 1. 임베딩 모델 초기화
         try:
-            self.embeddings = GoogleGenerativeAIEmbeddings(
-                model=settings.EMBEDDING_MODEL,
-                google_api_key=settings.GEMINI_API_KEY
-            )
+            self.embeddings = Embedder
         except Exception as e:
             logger.error(f"임베딩 모델 초기화 실패: {e}")
             raise e
@@ -111,6 +106,7 @@ class VectorStore:
             
             # 2. 벡터 검색 쿼리 (L2 Distance or Cosine Similarity)
             # <=> : Cosine distance, <-> : L2 distance, <#> : Inner product
+            # 일반적으로 Cosine distance 사용
             search_query = """
                 SELECT title, body, source_url, 1 - (embedding <=> %s::vector) as similarity
                 FROM notices

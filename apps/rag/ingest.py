@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 import hashlib
 from pathlib import Path
 from datetime import datetime
@@ -23,22 +22,22 @@ def generate_dedupe_hash(title: str, url: str) -> str:
     unique_string = f"{title}_{url}"
     return hashlib.sha256(unique_string.encode('utf-8')).hexdigest()
 
-def parse_date(date_str):
-    """
-    날짜 문자열을 파싱하여 DB에 맞는 포맷으로 변환하거나 None 반환
-    """
-    if not date_str:
-        return None
-    try:
-        # 다양한 날짜 포맷 시도 (필요에 따라 추가)
-        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y.%m.%d"):
-            try:
-                return datetime.strptime(date_str, fmt)
-            except ValueError:
-                continue
-        return None # 파싱 실패 시 None
-    except Exception:
-        return None
+# def parse_date(date_str):
+#     """
+#     날짜 문자열을 파싱하여 DB에 맞는 포맷으로 변환하거나 None 반환
+#     """
+#     if not date_str:
+#         return None
+#     try:
+#         # 다양한 날짜 포맷 시도 (필요에 따라 추가)
+#         for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y.%m.%d"):
+#             try:
+#                 return datetime.strptime(date_str, fmt)
+#             except ValueError:
+#                 continue
+#         return None # 파싱 실패 시 None
+#     except Exception:
+#         return None
 
 def run_ingest():
     # 1. 경로 설정 (프로젝트 루트 찾기)
@@ -78,7 +77,7 @@ def run_ingest():
                 "source_name": item.get("notice_source", "Unknown"),
                 "source_url": url,                   # DB 컬럼: source_url
                 "title": title,
-                "dedupe_hash": generate_dedupe_hash(title, url), # [중요] 중복 방지 해시
+                "dedupe_hash": generate_dedupe_hash(title, url), # 해시 값
                 "published_at": item.get("created"), # DB 컬럼: published_at
                 "deadline_at": item.get("deadline"), # DB 컬럼: deadline_at
                 "category": item.get("category"),

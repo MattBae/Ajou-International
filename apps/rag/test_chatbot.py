@@ -38,7 +38,7 @@ def main():
                 if not user_input:
                     continue
 
-                # 3. 답변 요청 (여기에 기존 chatbot.get_response 로직 위치)
+                # 3. 답변 요청
                 print("\n🤖 Azan이 생각 중입니다...")
                 response = chatbot.get_response(user_input)
                 
@@ -47,7 +47,6 @@ def main():
                 print(f"💬 답변:\n{response}")
                 print("-" * 50 + "\n")
 
-            # [수정된 부분] Ctrl+C 입력 시 안전하게 종료
             except KeyboardInterrupt:
                 print("\n\n⚠️ 사용자에 의해 챗봇을 강제 종료합니다. (Ctrl+C)")
                 break

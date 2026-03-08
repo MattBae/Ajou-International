@@ -3,3 +3,4 @@ python-dotenv
 langchain-core
 psycopg2-binary
 langchain-google-genai
+pydantic-settings
