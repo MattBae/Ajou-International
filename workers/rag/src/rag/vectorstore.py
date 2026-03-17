@@ -34,7 +34,7 @@ class VectorStore:
         conn = self.get_connection()
         cursor = conn.cursor()
         try:
-            query_embedding = self.embeddings.embed_query(query)
+            query_embedding = self.embeddings.embed_query(text = query, output_dimensionality = 1536)
             # 백엔드 스키마: title, body, url, deadline, embedding (NULL 제외)
             search_query = """
                 SELECT title, body, url, deadline, 1 - (embedding <=> %s::vector) AS similarity
