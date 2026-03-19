@@ -12,7 +12,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from .db_errors import db_connection_failed_response, log_db_exception, sanitize_db_error
 from .database import SessionLocal
 from .routers.auth import router as auth_router
-from .routers.db import router as db_router
 from .routers.keywords import router as keywords_router
 from .routers.notices import router as notices_router
 
@@ -73,8 +72,6 @@ def health_db():
     finally:
         db.close()
 
-
-app.include_router(db_router)
 app.include_router(auth_router)
 app.include_router(keywords_router)
 app.include_router(notices_router)
