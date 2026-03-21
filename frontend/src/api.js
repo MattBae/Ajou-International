@@ -113,6 +113,10 @@ export async function fetchNoticeDetail(id) {
   return apiRequest(`/notices/${id}`);
 }
 
+export async function fetchMe() {
+  return apiRequest("/auth/me");
+}
+
 export async function fetchKeywords() {
   return apiRequest("/keywords");
 }

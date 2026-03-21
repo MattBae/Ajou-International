@@ -212,56 +212,52 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
         })}
       </ScrollView>
 
-      {loading ? (
-        <View style={styles.centerBox}>
-          <ActivityIndicator size="small" color="#2f6df6" />
-          <Text style={styles.hintText}>공지사항을 불러오는 중...</Text>
-        </View>
-      ) : null}
-
-      {!loading && error ? (
-        <View style={styles.centerBox}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadInitial} activeOpacity={0.9}>
-            <Text style={styles.retryButtonText}>다시 시도</Text>
+      <FlatList
+        data={notices}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.card} activeOpacity={0.92} onPress={() => onSelectNotice(item.id)}>
+            <View style={styles.cardTopRow}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{item.keyword || ""}</Text>
+              </View>
+              <Text style={styles.dateText}>{formatKoreanDate(item.published_at)}</Text>
+            </View>
+            <View style={styles.cardBodyRow}>
+              <View style={styles.cardBodyTextWrap}>
+                <Text style={styles.cardTitle} numberOfLines={2}>
+                  {item.title}
+                </Text>
+                <Text style={styles.cardPreview} numberOfLines={2}>
+                  {item.preview}
+                </Text>
+              </View>
+              <Text style={styles.chevron}>{">"}</Text>
+            </View>
           </TouchableOpacity>
-        </View>
-      ) : null}
-
-      {!loading && !error ? (
-        <FlatList
-          data={notices}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} activeOpacity={0.92} onPress={() => onSelectNotice(item.id)}>
-              <View style={styles.cardTopRow}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.keyword || ""}</Text>
-                </View>
-                <Text style={styles.dateText}>{formatKoreanDate(item.published_at)}</Text>
-              </View>
-              <View style={styles.cardBodyRow}>
-                <View style={styles.cardBodyTextWrap}>
-                  <Text style={styles.cardTitle} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.cardPreview} numberOfLines={2}>
-                    {item.preview}
-                  </Text>
-                </View>
-                <Text style={styles.chevron}>{">"}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
+        )}
+        ListEmptyComponent={
+          loading ? (
+            <View style={styles.centerBox}>
+              <ActivityIndicator size="small" color="#2f6df6" />
+              <Text style={styles.hintText}>공지사항을 불러오는 중...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.centerBox}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={loadInitial} activeOpacity={0.9}>
+                <Text style={styles.retryButtonText}>다시 시도</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
             <View style={styles.centerBox}>
               <Text style={styles.hintText}>표시할 공지사항이 없습니다.</Text>
             </View>
-          }
-        />
-      ) : null}
+          )
+        }
+      />
     </View>
   );
 }
