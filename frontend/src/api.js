@@ -4,7 +4,7 @@ import { API_BASE_URL } from "./config";
 
 const TOKEN_KEY = "auth_token";
 const MY_KEYWORDS_CACHE_KEY = "my_enabled_keyword_ids_cache_v2";
-const REQUEST_TIMEOUT_MS = 8000;
+const REQUEST_TIMEOUT_MS = 60000; // Render free tier needs up to 50s to wake up
 
 export async function saveToken(token) {
   await SecureStore.setItemAsync(TOKEN_KEY, token);
