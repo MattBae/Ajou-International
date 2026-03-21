@@ -23,10 +23,11 @@ export async function clearToken() {
 }
 
 export async function apiRequest(path, options = {}) {
+  const { suppressErrorLog = false, ...requestOptions } = options;
   const token = await getToken();
   const headers = {
     "Content-Type": "application/json",
-    ...(options.headers || {}),
+    ...(requestOptions.headers || {}),
   };
 
   if (token) {
@@ -39,7 +40,7 @@ export async function apiRequest(path, options = {}) {
   const requestUrl = `${API_BASE_URL}${path}`;
   try {
     res = await fetch(requestUrl, {
-      ...options,
+      ...requestOptions,
       headers,
       signal: controller.signal,
     });
@@ -63,11 +64,16 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (!res.ok) {
-    console.error("[apiRequest] request failed", {
+    const errorPayload = {
       url: requestUrl,
       status: res.status,
       body: data,
-    });
+    };
+    if (suppressErrorLog) {
+      console.warn("[apiRequest] request failed", errorPayload);
+    } else {
+      console.error("[apiRequest] request failed", errorPayload);
+    }
     if (data && typeof data === "object") {
       if ("detail" in data) {
         throw new Error(String(data.detail));
@@ -113,7 +119,7 @@ export async function fetchKeywords() {
 
 export async function fetchMyKeywords(token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-  return apiRequest("/users/me/keywords", { headers });
+  return apiRequest("/users/me/keywords", { headers, suppressErrorLog: true });
 }
 
 export async function updateMyKeywords(token, enabledIds) {

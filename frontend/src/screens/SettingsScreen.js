@@ -36,14 +36,25 @@ export default function SettingsScreen() {
       if (Array.isArray(cachedEnabled) && cachedEnabled.length) {
         setEnabledSet(new Set(cachedEnabled.map((value) => Number(value))));
       }
-      const [allKeywordsRes, myKeywordsRes] = await Promise.all([
-        fetchKeywords(),
-        fetchMyKeywords(token),
-      ]);
+
+      const allKeywordsRes = await fetchKeywords();
       const nextKeywords = Array.isArray(allKeywordsRes) ? allKeywordsRes : [];
-      const nextEnabled = Array.isArray(myKeywordsRes?.enabled) ? myKeywordsRes.enabled : [];
       setKeywords(nextKeywords);
-      setEnabledSet(new Set(nextEnabled.map((value) => Number(value))));
+
+      if (!token) {
+        setEnabledSet(new Set());
+        setError("로그인이 필요합니다. 다시 로그인해 주세요.");
+        return;
+      }
+
+      try {
+        const myKeywordsRes = await fetchMyKeywords(token);
+        const nextEnabled = Array.isArray(myKeywordsRes?.enabled) ? myKeywordsRes.enabled : [];
+        setEnabledSet(new Set(nextEnabled.map((value) => Number(value))));
+      } catch (e) {
+        setEnabledSet(new Set());
+        setError(e?.message || "키워드 구독 상태를 불러오지 못했습니다.");
+      }
     } catch (e) {
       setError(e?.message || "Failed to load settings.");
     } finally {
@@ -123,6 +134,7 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             );
           })}
+          {!sortedKeywords.length ? <Text style={styles.hintText}>등록된 키워드가 없습니다.</Text> : null}
         </ScrollView>
       )}
 

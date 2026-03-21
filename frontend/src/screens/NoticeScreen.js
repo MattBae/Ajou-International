@@ -46,7 +46,29 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
 
   const loadNotices = useCallback(async (keywordId) => {
     const data = await fetchNotices(keywordId);
-    setNotices(Array.isArray(data?.items) ? data.items : []);
+    const nextItems = Array.isArray(data?.items) ? data.items : [];
+    setNotices(nextItems);
+
+    // Fallback: if /keywords is empty but notices contain keyword metadata,
+    // build chips from notice payload so filtering remains usable.
+    setKeywords((prev) => {
+      const nonAllCount = prev.filter((item) => !item?.isAll).length;
+      if (nonAllCount > 0) {
+        return prev;
+      }
+      const derivedMap = new Map();
+      for (const item of nextItems) {
+        const keywordIdValue = Number(item?.keyword_id);
+        const keywordLabel = String(item?.keyword || "").trim();
+        if (Number.isFinite(keywordIdValue) && keywordLabel) {
+          derivedMap.set(keywordIdValue, { id: keywordIdValue, keyword: keywordLabel });
+        }
+      }
+      if (!derivedMap.size) {
+        return prev;
+      }
+      return [{ id: null, keyword: "전체", isAll: true }, ...Array.from(derivedMap.values())];
+    });
   }, []);
 
   const loadInitial = useCallback(async () => {
@@ -201,6 +223,11 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
               </View>
             </TouchableOpacity>
           )}
+          ListEmptyComponent={
+            <View style={styles.centerBox}>
+              <Text style={styles.hintText}>표시할 공지사항이 없습니다.</Text>
+            </View>
+          }
         />
       ) : null}
     </View>
@@ -245,12 +272,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
     gap: 8,
+    alignItems: "center",
   },
   chip: {
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
+    alignSelf: "flex-start",
   },
   chipSelected: {
     backgroundColor: "#2f6df6",
