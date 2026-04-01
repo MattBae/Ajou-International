@@ -33,6 +33,7 @@ async function registerForPushNotifications() {
   }
 }
 import ChatbotScreen from "./src/screens/ChatbotScreen";
+import CalendarScreen from "./src/screens/CalendarScreen";
 import HomeScreen from "./src/screens/HomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import NoticeDetailScreen from "./src/screens/NoticeDetailScreen";
@@ -83,6 +84,9 @@ export default function App() {
       if (noticeView === "settings") {
         return <SettingsScreen />;
       }
+      if (noticeView === "calendar") {
+        return <CalendarScreen />;
+      }
       if (selectedNoticeId) {
         return <NoticeDetailScreen noticeId={selectedNoticeId} onBack={() => setSelectedNoticeId(null)} />;
       }
@@ -95,6 +99,10 @@ export default function App() {
           onOpenSettings={() => {
             setSelectedNoticeId(null);
             setNoticeView("settings");
+          }}
+          onOpenCalendar={() => {
+            setSelectedNoticeId(null);
+            setNoticeView("calendar");
           }}
         />
       );

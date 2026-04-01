@@ -20,7 +20,7 @@ function formatKoreanDate(value) {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
-export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
+export default function NoticeScreen({ onSelectNotice, onOpenSettings, onOpenCalendar }) {
   const [keywords, setKeywords] = useState([]);
   const [selectedKeywordIds, setSelectedKeywordIds] = useState(new Set());
   const [notices, setNotices] = useState([]);
@@ -181,9 +181,14 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>공지사항</Text>
-        <TouchableOpacity style={styles.settingsButton} onPress={onOpenSettings} activeOpacity={0.85}>
-          <Text style={styles.settingsButtonText}>⚙️</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.settingsButton} onPress={onOpenSettings} activeOpacity={0.85}>
+            <Text style={styles.settingsButtonText}>⚙️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingsButton} onPress={onOpenCalendar} activeOpacity={0.85}>
+            <Text style={styles.settingsButtonText}>🗓️</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -294,6 +299,11 @@ const styles = StyleSheet.create({
   },
   settingsButtonText: {
     fontSize: 18,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   chipScroll: {
     marginBottom: 10,
