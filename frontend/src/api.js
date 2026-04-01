@@ -113,6 +113,14 @@ export async function fetchNoticeDetail(id) {
   return apiRequest(`/notices/${id}`);
 }
 
+export async function fetchCalendarNotices(startDate, endDate, limit = 500) {
+  const params = new URLSearchParams();
+  params.append("start_date", String(startDate));
+  params.append("end_date", String(endDate));
+  params.append("limit", String(limit));
+  return apiRequest(`/notices/calendar?${params.toString()}`);
+}
+
 export async function fetchMe() {
   return apiRequest("/auth/me");
 }

@@ -1,12 +1,25 @@
-import React, { useMemo, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-export default function CalendarScreen() {
+import { fetchCalendarNotices } from "../api";
+
+export default function CalendarScreen({ onSelectNotice }) {
   const [viewMode, setViewMode] = useState("monthly");
   const [anchorDate, setAnchorDate] = useState(new Date());
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const today = new Date();
 
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const weekStart = useMemo(() => startOfWeekMonday(anchorDate), [anchorDate]);
 
   const periodLabel = useMemo(() => {
     if (viewMode === "monthly") {
@@ -21,6 +34,67 @@ export default function CalendarScreen() {
     }
     return buildWeeklyCells(anchorDate);
   }, [anchorDate, viewMode]);
+
+  const range = useMemo(() => {
+    if (!calendarCells.length) {
+      return null;
+    }
+    return {
+      start: calendarCells[0].date,
+      end: calendarCells[calendarCells.length - 1].date,
+    };
+  }, [calendarCells]);
+
+  const noticesByDate = useMemo(() => {
+    const grouped = new Map();
+    for (const item of items) {
+      const key = normalizeDateKey(item?.deadline);
+      if (!key) {
+        continue;
+      }
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key).push(item);
+    }
+    return grouped;
+  }, [items]);
+
+  useEffect(() => {
+    if (!range) {
+      return;
+    }
+
+    let alive = true;
+
+    async function loadCalendarItems() {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetchCalendarNotices(toDateKey(range.start), toDateKey(range.end));
+        if (!alive) {
+          return;
+        }
+        const nextItems = Array.isArray(res?.items) ? res.items : [];
+        setItems(nextItems);
+      } catch (e) {
+        if (!alive) {
+          return;
+        }
+        setItems([]);
+        setError(e?.message || "캘린더 공지사항을 불러오지 못했습니다.");
+      } finally {
+        if (alive) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadCalendarItems();
+    return () => {
+      alive = false;
+    };
+  }, [range]);
 
   const onPressPrev = () => {
     if (viewMode === "monthly") {
@@ -39,7 +113,7 @@ export default function CalendarScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator>
       <Text style={styles.title}>Calendar</Text>
 
       <View style={styles.topBar}>
@@ -75,38 +149,101 @@ export default function CalendarScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.weekHeaderRow}>
-        {weekDays.map((day) => (
-          <View style={styles.weekHeaderCell} key={day}>
-            <Text style={styles.weekHeaderText}>{day}</Text>
-          </View>
-        ))}
-      </View>
+      {viewMode === "monthly" ? (
+        <View style={styles.weekHeaderRow}>
+          {weekDays.map((day) => (
+            <View style={styles.weekHeaderCell} key={day}>
+              <Text style={styles.weekHeaderText}>{day}</Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View style={styles.weekHeaderRow}>
+          {weekDays.map((day, index) => {
+            const headerDate = addDays(weekStart, index);
+            const isToday = isSameDay(headerDate, today);
+            return (
+              <View style={styles.weekHeaderCell} key={`${day}-${headerDate.toISOString()}`}>
+                <View style={[styles.weeklyHeaderInline, isToday ? styles.weeklyHeaderInlineToday : null]}>
+                  <Text style={[styles.weeklyDayText, isToday ? styles.weeklyHeaderTextToday : null]}>{day}</Text>
+                  <Text style={[styles.weeklyDateText, isToday ? styles.weeklyHeaderTextToday : null]}>
+                    {formatDay2(headerDate)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {loading ? (
+        <View style={styles.statusBox}>
+          <ActivityIndicator size="small" color="#2f6df6" />
+          <Text style={styles.statusText}>캘린더 공지를 불러오는 중...</Text>
+        </View>
+      ) : null}
+      {error ? (
+        <View style={styles.statusBox}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.grid}>
-        {calendarCells.map((cell) => (
-          <View style={styles.dayCell} key={cell.key}>
+        {calendarCells.map((cell) => {
+          const dateKey = toDateKey(cell.date);
+          const dayItems = noticesByDate.get(dateKey) || [];
+          return (
             <View
-              style={[
-                styles.dayBadge,
-                !cell.inCurrentPeriod ? styles.dayBadgeMuted : null,
-                isSameDay(cell.date, today) ? styles.dayBadgeToday : null,
-              ]}
+              style={[styles.dayCell, viewMode === "monthly" ? styles.monthlyDayCell : styles.weeklyDayCell]}
+              key={cell.key}
             >
-              <Text
-                style={[
-                  styles.dayText,
-                  !cell.inCurrentPeriod ? styles.dayTextMuted : null,
-                  isSameDay(cell.date, today) ? styles.dayTextToday : null,
-                ]}
+              {viewMode === "monthly" ? (
+                <View
+                  style={[
+                    styles.dayBadge,
+                    styles.monthlyDayBadge,
+                    !cell.inCurrentPeriod ? styles.dayBadgeMuted : null,
+                    isSameDay(cell.date, today) ? styles.dayBadgeToday : null,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      !cell.inCurrentPeriod ? styles.dayTextMuted : null,
+                      isSameDay(cell.date, today) ? styles.dayTextToday : null,
+                    ]}
+                  >
+                    {formatDay2(cell.date)}
+                  </Text>
+                </View>
+              ) : null}
+
+              <ScrollView
+                style={styles.noticeListScroll}
+                contentContainerStyle={styles.noticeListContent}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator={dayItems.length > 0}
               >
-                {cell.date.getDate()}
-              </Text>
+                {dayItems.length ? (
+                  dayItems.map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.noticeItem}
+                      activeOpacity={0.85}
+                      onPress={() => onSelectNotice?.(item.id)}
+                    >
+                      <Text style={styles.noticeTitle}>{item.title}</Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text style={styles.emptyNoticeText}>-</Text>
+                )}
+              </ScrollView>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -121,8 +258,7 @@ function addMonths(date, months) {
   const month = date.getMonth();
   const day = date.getDate();
   const lastDayOfTargetMonth = new Date(year, month + months + 1, 0).getDate();
-  const target = new Date(year, month + months, Math.min(day, lastDayOfTargetMonth));
-  return target;
+  return new Date(year, month + months, Math.min(day, lastDayOfTargetMonth));
 }
 
 function formatMonthlyLabel(date) {
@@ -210,12 +346,41 @@ function isSameDay(a, b) {
   );
 }
 
+function formatDay2(date) {
+  return String(date.getDate()).padStart(2, "0");
+}
+
+function toDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDateKey(value) {
+  if (!value) {
+    return "";
+  }
+  const raw = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+  return toDateKey(parsed);
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
+  },
+  contentContainer: {
     paddingTop: 18,
     paddingHorizontal: 16,
+    paddingBottom: 130,
   },
   title: {
     fontSize: 30,
@@ -285,10 +450,48 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
+  weeklyHeaderInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
   weekHeaderText: {
     fontSize: 12,
     fontWeight: "700",
     color: "#64748b",
+  },
+  weeklyHeaderInlineToday: {
+    backgroundColor: "#E85D75",
+  },
+  weeklyDayText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748b",
+  },
+  weeklyDateText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#334155",
+  },
+  weeklyHeaderTextToday: {
+    color: "#ffffff",
+  },
+  statusBox: {
+    marginBottom: 8,
+    alignItems: "center",
+    gap: 6,
+  },
+  statusText: {
+    color: "#64748b",
+    fontSize: 13,
+  },
+  errorText: {
+    color: "#b91c1c",
+    fontSize: 13,
+    fontWeight: "600",
   },
   grid: {
     flexDirection: "row",
@@ -301,14 +504,20 @@ const styles = StyleSheet.create({
   },
   dayCell: {
     width: "14.2857%",
-    minHeight: 58,
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderRightColor: "#f1f5f9",
     borderBottomColor: "#f1f5f9",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
     paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  monthlyDayCell: {
+    height: 116,
+  },
+  weeklyDayCell: {
+    height: 464,
   },
   dayBadge: {
     width: 32,
@@ -316,6 +525,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+  },
+  monthlyDayBadge: {
+    alignSelf: "flex-start",
   },
   dayBadgeMuted: {
     backgroundColor: "#f8fafc",
@@ -334,5 +546,33 @@ const styles = StyleSheet.create({
   dayTextToday: {
     color: "#ffffff",
     fontWeight: "700",
+  },
+  noticeListScroll: {
+    width: "100%",
+    flex: 1,
+    marginTop: 6,
+  },
+  noticeListContent: {
+    gap: 6,
+    paddingBottom: 4,
+  },
+  noticeItem: {
+    borderWidth: 1,
+    borderColor: "#dbe4f3",
+    borderRadius: 8,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+  },
+  noticeTitle: {
+    color: "#334155",
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "600",
+  },
+  emptyNoticeText: {
+    color: "#94a3b8",
+    fontSize: 11,
+    fontWeight: "600",
   },
 });

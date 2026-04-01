@@ -85,7 +85,14 @@ export default function App() {
         return <SettingsScreen />;
       }
       if (noticeView === "calendar") {
-        return <CalendarScreen />;
+        return (
+          <CalendarScreen
+            onSelectNotice={(id) => {
+              setNoticeView("list");
+              setSelectedNoticeId(id);
+            }}
+          />
+        );
       }
       if (selectedNoticeId) {
         return <NoticeDetailScreen noticeId={selectedNoticeId} onBack={() => setSelectedNoticeId(null)} />;
