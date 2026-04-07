@@ -1,0 +1,105 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Tabs, useRouter } from 'expo-router';
+import React from 'react';
+import { Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+export default function TabsLayout() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  const renderHeaderLeft = () => (
+    <Pressable
+      onPress={() => router.push('/calendar')}
+      style={{ marginLeft: 16 }}
+    >
+      <Ionicons name="calendar-outline" size={24} color="#0F172A" />
+    </Pressable>
+  );
+
+  const renderHeaderRight = () => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+      <Pressable onPress={() => router.push('/alerts')} style={{ marginRight: 14 }}>
+        <Ionicons name="notifications-outline" size={22} color="#0F172A" />
+      </Pressable>
+
+      <Pressable onPress={() => router.push('/settings')}>
+        <Ionicons name="settings-outline" size={22} color="#0F172A" />
+      </Pressable>
+    </View>
+  );
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        headerTitleAlign: 'center',
+        headerStyle: {
+          backgroundColor: '#FFFFFF',
+        },
+        headerShadowVisible: false,
+        headerLeft: renderHeaderLeft,
+        headerRight: renderHeaderRight,
+        tabBarActiveTintColor: '#D95C4F',
+        tabBarInactiveTintColor: '#94A3B8',
+        tabBarItemStyle: {
+          paddingVertical: 4,
+        },
+        tabBarStyle: {
+          position: 'absolute',
+          left: 12,
+          right: 12,
+          bottom: insets.bottom + 8,
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#E2E8F0',
+          borderTopWidth: 1,
+          borderRadius: 20,
+          height: 64,
+          paddingTop: 8,
+          paddingBottom: 8,
+          elevation: 10,
+          shadowColor: '#0F172A',
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          shadowOffset: {
+            width: 0,
+            height: 4,
+          },
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: '홈',
+          headerTitle: 'Ajou International',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: '채팅',
+          headerTitle: '챗봇 상담',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="notices"
+        options={{
+          title: '공지',
+          headerTitle: '공지사항',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="document-text-outline" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
+}
