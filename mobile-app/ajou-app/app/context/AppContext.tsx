@@ -12,19 +12,22 @@ import type {
 } from '../types';
 
 const initialUserProfileStatus: UserProfileStatus = {
-  schoolEmail: 'student@ajou.ac.kr',
-  studentType: 'Undergraduate',
-  academicStatus: 'Enrolled',
-  year: '3',
-  semester: '1',
-  studentId: '202212345',
+  name: 'Student',
+  email: 'student@example.com',
+  languageInstituteStatus: 'Planned',
+  languageInstituteTerm: 'Term 1',
+  targetAdmissionTerm: 'September',
+  desiredMajor: 'Digital Media',
   visaType: 'D-2',
+  visaExpiryDate: '2026-08-31',
+  visaExpiryUnknown: false,
+  topikStatus: 'None',
+  topikLevel: 'Level 4',
+  topikTargetLevel: 'Level 4',
+  topikTestPlan: 'Scheduled',
+  interests: ['Visa', 'TOPIK', 'Admission'],
   preferredLanguage: 'English',
   residenceType: 'Dormitory',
-  topikStatus: 'TOPIK Level 4',
-  gpa: '3.84',
-  major: 'Digital Media',
-  interests: ['Visa', 'TOPIK', 'Academic'],
 };
 
 const initialSelectedLanguage: LanguageOption = 'English';

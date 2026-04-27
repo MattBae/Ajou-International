@@ -13,7 +13,8 @@ type HomeReminderItem = {
 };
 
 export default function HomeScreen() {
-  const { notices, savedNoticeReminders, toggleNoticeReminderDone } = useAppContext();
+  const { notices, savedNoticeReminders, toggleNoticeReminderDone } =
+    useAppContext();
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const weekEndKey = getFutureDateKey(6);
@@ -48,14 +49,8 @@ export default function HomeScreen() {
     })
     .filter((item) => item.isCritical || item.isUrgent)
     .sort((a, b) => {
-      if (a.isDone !== b.isDone) {
-        return a.isDone ? 1 : -1;
-      }
-
-      if (a.dueDate !== b.dueDate) {
-        return a.dueDate.localeCompare(b.dueDate);
-      }
-
+      if (a.isDone !== b.isDone) return a.isDone ? 1 : -1;
+      if (a.dueDate !== b.dueDate) return a.dueDate.localeCompare(b.dueDate);
       return a.title.localeCompare(b.title);
     });
 
@@ -65,162 +60,163 @@ export default function HomeScreen() {
     totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.highlightCard}>
-        <Text style={styles.sectionLabel}>오늘의 공지</Text>
+    <View style={styles.screen}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.highlightCard}>
+          <Text style={styles.sectionLabel}>오늘의 공지</Text>
 
-        {todayNotices.length > 0 ? (
-          todayNotices.map((item) => (
-            <View key={item.id} style={styles.noticeItem}>
-              <View style={styles.noticeHeaderRow}>
-                <Text style={styles.noticeCategory}>{item.category}</Text>
-                {item.isCritical ? (
-                  <View style={styles.noticeBadge}>
-                    <Text style={styles.noticeBadgeText}>중요</Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text style={styles.noticeTitle}>{item.title}</Text>
-              <Text style={styles.noticeSummary}>{item.summary}</Text>
-              <Text style={styles.noticeDate}>
-                {item.deadline ? `마감일 ${item.deadline}` : `게시일 ${item.date}`}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>오늘 꼭 확인할 공지가 없습니다.</Text>
-        )}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>오늘 마감 공지</Text>
-
-        {todayDeadlines.length > 0 ? (
-          todayDeadlines.map((reminder) => (
-            <TouchableOpacity
-              key={reminder.id}
-              style={styles.taskRow}
-              onPress={() => toggleNoticeReminderDone(reminder.id)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.checkBox}>
-                <Ionicons name="alarm-outline" size={24} color="#D95C4F" />
-              </View>
-
-              <View style={styles.rowTextWrap}>
-                <Text style={styles.taskTitle}>{reminder.title}</Text>
-                <Text style={styles.taskDate}>
-                  {reminder.category} · 마감 {reminder.dueDate}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>오늘 마감으로 저장된 공지가 없습니다.</Text>
-        )}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>이번 주 할 일</Text>
-        <Text style={styles.sectionHint}>
-          캘린더에 저장한 공지 중 이번 주까지 처리해야 할 중요한 일정입니다.
-        </Text>
-
-        {weeklyTasks.length > 0 ? (
-          weeklyTasks.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.taskRow, item.isDone && styles.taskRowDone]}
-              onPress={() => toggleNoticeReminderDone(item.id)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.checkBox}>
-                {item.isDone ? (
-                  <Ionicons name="checkmark-circle" size={24} color="#0F766E" />
-                ) : item.isUrgent ? (
-                  <Ionicons name="alarm-outline" size={24} color="#D95C4F" />
-                ) : (
-                  <Ionicons name="ellipse-outline" size={24} color="#C0C7D1" />
-                )}
-              </View>
-
-              <View style={styles.rowTextWrap}>
-                <View style={styles.taskBadgeRow}>
+          {todayNotices.length > 0 ? (
+            todayNotices.map((item) => (
+              <View key={item.id} style={styles.noticeItem}>
+                <View style={styles.noticeHeaderRow}>
+                  <Text style={styles.noticeCategory}>{item.category}</Text>
                   {item.isCritical ? (
-                    <View style={styles.inlineBadge}>
-                      <Text style={styles.inlineBadgeText}>중요</Text>
-                    </View>
-                  ) : null}
-                  {item.isUrgent ? (
-                    <View style={styles.inlineBadgeUrgent}>
-                      <Text style={styles.inlineBadgeUrgentText}>임박</Text>
-                    </View>
-                  ) : null}
-                  {item.isDone ? (
-                    <View style={styles.inlineBadgeDone}>
-                      <Text style={styles.inlineBadgeDoneText}>완료</Text>
+                    <View style={styles.noticeBadge}>
+                      <Text style={styles.noticeBadgeText}>중요</Text>
                     </View>
                   ) : null}
                 </View>
 
-                <Text style={[styles.taskTitle, item.isDone && styles.taskTitleDone]}>
-                  {item.title}
-                </Text>
-                <Text style={[styles.taskDate, item.isDone && styles.taskDateDone]}>
-                  {item.category} · 마감 {item.dueDate}
+                <Text style={styles.noticeTitle}>{item.title}</Text>
+                <Text style={styles.noticeSummary}>{item.summary}</Text>
+                <Text style={styles.noticeDate}>
+                  {item.deadline ? `마감일 ${item.deadline}` : `게시일 ${item.date}`}
                 </Text>
               </View>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>
-            이번 주까지 처리할 저장 공지가 없습니다.
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.progressLabel}>진행률</Text>
-        <Text style={styles.progressNumber}>{progress}%</Text>
-
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+            ))
+          ) : (
+            <Text style={styles.emptyText}>오늘 꼭 확인할 공지가 없습니다.</Text>
+          )}
         </View>
 
-        <Text style={styles.progressText}>
-          완료 {doneCount}개 · 남음 {totalCount - doneCount}개
-        </Text>
-      </View>
-    </ScrollView>
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>오늘 마감 공지</Text>
+
+          {todayDeadlines.length > 0 ? (
+            todayDeadlines.map((reminder) => (
+              <TouchableOpacity
+                key={reminder.id}
+                style={styles.taskRow}
+                onPress={() => toggleNoticeReminderDone(reminder.id)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.checkBox}>
+                  <Ionicons name="alarm-outline" size={24} color="#D95C4F" />
+                </View>
+
+                <View style={styles.rowTextWrap}>
+                  <Text style={styles.taskTitle}>{reminder.title}</Text>
+                  <Text style={styles.taskDate}>
+                    {reminder.category} · 마감 {reminder.dueDate}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>오늘 마감으로 저장된 공지가 없습니다.</Text>
+          )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>이번 주 할 일</Text>
+          <Text style={styles.sectionHint}>
+            캘린더에 저장한 공지 중 이번 주까지 처리해야 할 중요한 일정입니다.
+          </Text>
+
+          {weeklyTasks.length > 0 ? (
+            weeklyTasks.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.taskRow, item.isDone && styles.taskRowDone]}
+                onPress={() => toggleNoticeReminderDone(item.id)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.checkBox}>
+                  {item.isDone ? (
+                    <Ionicons name="checkmark-circle" size={24} color="#0F766E" />
+                  ) : item.isUrgent ? (
+                    <Ionicons name="alarm-outline" size={24} color="#D95C4F" />
+                  ) : (
+                    <Ionicons name="ellipse-outline" size={24} color="#C0C7D1" />
+                  )}
+                </View>
+
+                <View style={styles.rowTextWrap}>
+                  <View style={styles.taskBadgeRow}>
+                    {item.isCritical ? (
+                      <View style={styles.inlineBadge}>
+                        <Text style={styles.inlineBadgeText}>중요</Text>
+                      </View>
+                    ) : null}
+
+                    {item.isUrgent ? (
+                      <View style={styles.inlineBadgeUrgent}>
+                        <Text style={styles.inlineBadgeUrgentText}>임박</Text>
+                      </View>
+                    ) : null}
+
+                    {item.isDone ? (
+                      <View style={styles.inlineBadgeDone}>
+                        <Text style={styles.inlineBadgeDoneText}>완료</Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <Text style={[styles.taskTitle, item.isDone && styles.taskTitleDone]}>
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.taskDate, item.isDone && styles.taskDateDone]}>
+                    {item.category} · 마감 {item.dueDate}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>
+              이번 주까지 처리할 저장 공지가 없습니다.
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.progressLabel}>진행률</Text>
+          <Text style={styles.progressNumber}>{progress}%</Text>
+
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          </View>
+
+          <Text style={styles.progressText}>
+            완료 {doneCount}개 · 남음 {totalCount - doneCount}개
+          </Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
-function getFutureDateKey(daysAhead: number) {
+function getFutureDateKey(daysFromToday: number) {
   const date = new Date();
-  date.setDate(date.getDate() + daysAhead);
+  date.setDate(date.getDate() + daysFromToday);
   return date.toISOString().slice(0, 10);
 }
 
 function normalizeDateKey(dateText: string) {
-  const normalized = dateText.trim().replace(/\./g, '-');
-  const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-
-  if (!match) {
-    return normalized.slice(0, 10);
-  }
-
-  const [, year, month, day] = match;
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  return dateText.slice(0, 10);
 }
 
 const styles = StyleSheet.create({
+  screen: {
+  flex: 1,
+  backgroundColor: '#F4F6FB',
+},
   container: {
     flex: 1,
     backgroundColor: '#F4F6FB',
   },
   content: {
     padding: 16,
-    paddingBottom: 28,
+    paddingBottom: 104,
   },
   highlightCard: {
     backgroundColor: '#FFF4BF',

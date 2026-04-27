@@ -8,7 +8,6 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="alerts" />
-        <Stack.Screen name="calendar" />
         <Stack.Screen name="notices/[id]" />
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="settings/profile" />

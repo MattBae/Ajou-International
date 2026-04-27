@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from './context/AppContext';
+import type { InterestCategory, NoticeCategory } from './types';
 
 export default function AlertsScreen() {
   const router = useRouter();
@@ -12,10 +13,12 @@ export default function AlertsScreen() {
     savedNoticeReminders,
   } = useAppContext();
 
-  const activeCategories =
+  const activeInterests =
     selectedNoticeCategories.length > 0
       ? selectedNoticeCategories
       : userProfileStatus.interests;
+
+  const activeCategories = activeInterests.map(mapInterestToNoticeCategory);
 
   const filteredAlerts = notices.filter((notice) =>
     activeCategories.includes(notice.category)
@@ -39,9 +42,9 @@ export default function AlertsScreen() {
         <Text style={styles.sectionTitle}>선택한 카테고리</Text>
         <View style={styles.chipRow}>
           {activeCategories.length > 0 ? (
-            activeCategories.map((category) => (
+            activeInterests.map((category) => (
               <View key={category} style={styles.chip}>
-                <Text style={styles.chipText}>{category}</Text>
+                <Text style={styles.chipText}>{getInterestLabel(category)}</Text>
               </View>
             ))
           ) : (
@@ -159,6 +162,40 @@ export default function AlertsScreen() {
       </View>
     </ScrollView>
   );
+}
+
+function mapInterestToNoticeCategory(
+  interest: InterestCategory | NoticeCategory
+): NoticeCategory {
+  switch (interest) {
+    case 'Admission':
+      return 'Academic';
+    case 'Life':
+      return 'Dormitory';
+    default:
+      return interest;
+  }
+}
+
+function getInterestLabel(interest: InterestCategory | NoticeCategory) {
+  switch (interest) {
+    case 'Visa':
+      return '비자';
+    case 'TOPIK':
+      return 'TOPIK';
+    case 'Admission':
+    case 'Academic':
+      return '입학';
+    case 'Scholarship':
+      return '장학금';
+    case 'Life':
+    case 'Dormitory':
+      return '생활';
+    case 'Events':
+      return '행사';
+    default:
+      return interest;
+  }
 }
 
 const styles = StyleSheet.create({

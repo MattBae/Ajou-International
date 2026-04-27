@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useAppContext } from './context/AppContext';
+import { useAppContext } from '../context/AppContext';
 
 type CalendarMode = 'Monthly' | 'Weekly';
 
@@ -32,33 +32,9 @@ export default function CalendarScreen() {
     );
   }, [savedNoticeReminders]);
 
-  const todayYear = today.getFullYear();
-  const todayMonth = today.getMonth();
-  const todayDate = today.getDate();
-
-  const handlePrev = () => {
-    const next = new Date(currentDate);
-
-    if (mode === 'Monthly') {
-      next.setMonth(next.getMonth() - 1);
-    } else {
-      next.setDate(next.getDate() - 7);
-    }
-
-    setCurrentDate(next);
-  };
-
-  const handleNext = () => {
-    const next = new Date(currentDate);
-
-    if (mode === 'Monthly') {
-      next.setMonth(next.getMonth() + 1);
-    } else {
-      next.setDate(next.getDate() + 7);
-    }
-
-    setCurrentDate(next);
-  };
+  const monthCells = useMemo(() => getMonthCells(currentDate), [currentDate]);
+  const weekDates = useMemo(() => getWeekDates(currentDate), [currentDate]);
+  const selectedReminders = remindersByDate[selectedDateKey] ?? [];
 
   const headerLabel = useMemo(() => {
     if (mode === 'Monthly') {
@@ -71,31 +47,26 @@ export default function CalendarScreen() {
     const start = week[0];
     const end = week[6];
 
-    return `${start.getFullYear()}.${String(start.getMonth() + 1).padStart(
-      2,
-      '0'
-    )}.${String(start.getDate()).padStart(2, '0')} - ${end.getFullYear()}.${String(
-      end.getMonth() + 1
-    ).padStart(2, '0')}.${String(end.getDate()).padStart(2, '0')}`;
+    return `${formatShortDate(start)} - ${formatShortDate(end)}`;
   }, [currentDate, mode]);
 
-  const monthCells = useMemo(() => getMonthCells(currentDate), [currentDate]);
-  const weekDates = useMemo(() => getWeekDates(currentDate), [currentDate]);
-  const selectedReminders = remindersByDate[selectedDateKey] ?? [];
+  const handlePrev = () => {
+    const next = new Date(currentDate);
+    next.setDate(next.getDate() + (mode === 'Monthly' ? -30 : -7));
+    setCurrentDate(next);
+  };
+
+  const handleNext = () => {
+    const next = new Date(currentDate);
+    next.setDate(next.getDate() + (mode === 'Monthly' ? 30 : 7));
+    setCurrentDate(next);
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.screenTitle}>캘린더</Text>
-      <Text style={styles.screenSubtitle}>
-        주간 또는 월간 보기로 저장한 공지 일정을 확인해보세요.
-      </Text>
-
       <View style={styles.modeSwitch}>
         <TouchableOpacity
-          style={[
-            styles.modeButton,
-            mode === 'Weekly' && styles.activeModeButton,
-          ]}
+          style={[styles.modeButton, mode === 'Weekly' && styles.activeModeButton]}
           onPress={() => setMode('Weekly')}
           activeOpacity={0.85}
         >
@@ -110,10 +81,7 @@ export default function CalendarScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.modeButton,
-            mode === 'Monthly' && styles.activeModeButton,
-          ]}
+          style={[styles.modeButton, mode === 'Monthly' && styles.activeModeButton]}
           onPress={() => setMode('Monthly')}
           activeOpacity={0.85}
         >
@@ -128,7 +96,7 @@ export default function CalendarScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.calendarCard}>
+      <View style={styles.card}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={handlePrev} style={styles.arrowButton}>
             <Ionicons name="chevron-back" size={20} color="#0F172A" />
@@ -151,118 +119,41 @@ export default function CalendarScreen() {
 
         {mode === 'Monthly' ? (
           <View style={styles.monthGrid}>
-            {monthCells.map((cell, index) => {
-              const isToday =
-                cell.date &&
-                cell.date.getFullYear() === todayYear &&
-                cell.date.getMonth() === todayMonth &&
-                cell.date.getDate() === todayDate;
-              const dateKey = cell.date ? formatDateKey(cell.date) : null;
-              const reminderCount = dateKey ? remindersByDate[dateKey]?.length ?? 0 : 0;
-              const isSelected = dateKey === selectedDateKey;
-
-              return (
-                <TouchableOpacity
-                  key={`${cell.label}-${index}`}
-                  style={styles.dayCell}
-                  onPress={() => {
-                    if (dateKey) {
-                      setSelectedDateKey(dateKey);
-                    }
-                  }}
-                  activeOpacity={0.85}
-                  disabled={!cell.date}
-                >
-                  {cell.date ? (
-                    <View
-                      style={[
-                        styles.dayCircle,
-                        isToday && styles.todayCircle,
-                        isSelected && styles.selectedCircle,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dayText,
-                          cell.isCurrentMonth
-                            ? styles.currentMonthText
-                            : styles.otherMonthText,
-                          (isToday || isSelected) && styles.todayText,
-                        ]}
-                      >
-                        {cell.label}
-                      </Text>
-                    </View>
-                  ) : (
-                    <Text style={styles.emptyText}>.</Text>
-                  )}
-
-                  {reminderCount > 0 ? (
-                    <View style={styles.markerWrap}>
-                      <View style={styles.markerDot} />
-                      {reminderCount > 1 ? (
-                        <Text style={styles.markerCount}>{reminderCount}</Text>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
+            {monthCells.map((cell, index) => (
+              <CalendarDay
+                key={`${cell.label}-${index}`}
+                date={cell.date}
+                label={cell.label}
+                isCurrentMonth={cell.isCurrentMonth}
+                selectedDateKey={selectedDateKey}
+                reminderCount={
+                  cell.date ? remindersByDate[formatDateKey(cell.date)]?.length ?? 0 : 0
+                }
+                onSelect={setSelectedDateKey}
+              />
+            ))}
           </View>
         ) : (
           <View style={styles.weekRow}>
-            {weekDates.map((date) => {
-              const isToday =
-                date.getFullYear() === todayYear &&
-                date.getMonth() === todayMonth &&
-                date.getDate() === todayDate;
-              const dateKey = formatDateKey(date);
-              const reminderCount = remindersByDate[dateKey]?.length ?? 0;
-              const isSelected = dateKey === selectedDateKey;
-
-              return (
-                <TouchableOpacity
-                  key={date.toISOString()}
-                  style={styles.weekDayCell}
-                  onPress={() => setSelectedDateKey(dateKey)}
-                  activeOpacity={0.85}
-                >
-                  <View
-                    style={[
-                      styles.dayCircle,
-                      isToday && styles.todayCircle,
-                      isSelected && styles.selectedCircle,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayText,
-                        styles.currentMonthText,
-                        (isToday || isSelected) && styles.todayText,
-                      ]}
-                    >
-                      {date.getDate()}
-                    </Text>
-                  </View>
-
-                  {reminderCount > 0 ? (
-                    <View style={styles.markerWrap}>
-                      <View style={styles.markerDot} />
-                      {reminderCount > 1 ? (
-                        <Text style={styles.markerCount}>{reminderCount}</Text>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
+            {weekDates.map((date) => (
+              <CalendarDay
+                key={date.toISOString()}
+                date={date}
+                label={String(date.getDate())}
+                isCurrentMonth
+                selectedDateKey={selectedDateKey}
+                reminderCount={remindersByDate[formatDateKey(date)]?.length ?? 0}
+                onSelect={setSelectedDateKey}
+                weekly
+              />
+            ))}
           </View>
         )}
       </View>
 
-      <View style={styles.remindersCard}>
-        <Text style={styles.remindersTitle}>선택한 날짜의 공지 마감일</Text>
-        <Text style={styles.remindersSubtitle}>{selectedDateKey}</Text>
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>선택한 날짜의 공지 마감</Text>
+        <Text style={styles.sectionSubtitle}>{selectedDateKey}</Text>
 
         {selectedReminders.length > 0 ? (
           selectedReminders.map((reminder) => (
@@ -298,17 +189,78 @@ export default function CalendarScreen() {
                 onPress={() => removeNoticeReminder(reminder.noticeId)}
                 activeOpacity={0.85}
               >
-                <Text style={styles.removeButtonText}>제거</Text>
+                <Text style={styles.removeButtonText}>삭제</Text>
               </TouchableOpacity>
             </View>
           ))
         ) : (
-          <Text style={styles.emptyReminderText}>
-            이 날짜에 저장된 공지 마감일이 없습니다.
-          </Text>
+          <Text style={styles.emptyText}>이 날짜에 저장된 공지 마감이 없습니다.</Text>
         )}
       </View>
     </ScrollView>
+  );
+}
+
+function CalendarDay({
+  date,
+  label,
+  isCurrentMonth,
+  selectedDateKey,
+  reminderCount,
+  onSelect,
+  weekly = false,
+}: {
+  date: Date | null;
+  label: string;
+  isCurrentMonth: boolean;
+  selectedDateKey: string;
+  reminderCount: number;
+  onSelect: (dateKey: string) => void;
+  weekly?: boolean;
+}) {
+  const todayKey = formatDateKey(new Date());
+  const dateKey = date ? formatDateKey(date) : null;
+  const isToday = dateKey === todayKey;
+  const isSelected = dateKey === selectedDateKey;
+
+  return (
+    <TouchableOpacity
+      style={weekly ? styles.weekDayCell : styles.dayCell}
+      onPress={() => {
+        if (dateKey) {
+          onSelect(dateKey);
+        }
+      }}
+      activeOpacity={0.85}
+      disabled={!date}
+    >
+      <View
+        style={[
+          styles.dayCircle,
+          isToday && styles.todayCircle,
+          isSelected && styles.selectedCircle,
+        ]}
+      >
+        <Text
+          style={[
+            styles.dayText,
+            isCurrentMonth ? styles.currentMonthText : styles.otherMonthText,
+            (isToday || isSelected) && styles.activeDayText,
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+
+      {reminderCount > 0 ? (
+        <View style={styles.markerWrap}>
+          <View style={styles.markerDot} />
+          {reminderCount > 1 ? (
+            <Text style={styles.markerCount}>{reminderCount}</Text>
+          ) : null}
+        </View>
+      ) : null}
+    </TouchableOpacity>
   );
 }
 
@@ -319,21 +271,20 @@ function formatDateKey(date: Date) {
   )}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+function formatShortDate(date: Date) {
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(
+    2,
+    '0'
+  )}.${String(date.getDate()).padStart(2, '0')}`;
+}
+
 function getMonthCells(baseDate: Date) {
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const firstDayWeek = firstDay.getDay();
-
+  const firstDayWeek = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevMonthDays = new Date(year, month, 0).getDate();
-
-  const cells: {
-    label: string;
-    date: Date | null;
-    isCurrentMonth: boolean;
-  }[] = [];
+  const cells: { label: string; date: Date; isCurrentMonth: boolean }[] = [];
 
   for (let i = 0; i < firstDayWeek; i++) {
     const day = prevMonthDays - firstDayWeek + i + 1;
@@ -366,9 +317,8 @@ function getMonthCells(baseDate: Date) {
 
 function getWeekDates(baseDate: Date) {
   const date = new Date(baseDate);
-  const dayOfWeek = date.getDay();
   const start = new Date(date);
-  start.setDate(date.getDate() - dayOfWeek);
+  start.setDate(date.getDate() - date.getDay());
 
   return Array.from({ length: 7 }, (_, index) => {
     const day = new Date(start);
@@ -380,30 +330,18 @@ function getWeekDates(baseDate: Date) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F7FB',
+    backgroundColor: '#F4F6FB',
   },
   content: {
     padding: 16,
-    paddingBottom: 28,
-  },
-  screenTitle: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  screenSubtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    lineHeight: 20,
-    marginBottom: 20,
+    paddingBottom: 104,
   },
   modeSwitch: {
     flexDirection: 'row',
     backgroundColor: '#E2E8F0',
     borderRadius: 14,
     padding: 4,
-    marginBottom: 18,
+    marginBottom: 16,
   },
   modeButton: {
     flex: 1,
@@ -422,7 +360,7 @@ const styles = StyleSheet.create({
   activeModeButtonText: {
     color: '#FFFFFF',
   },
-  calendarCard: {
+  card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 16,
@@ -499,7 +437,7 @@ const styles = StyleSheet.create({
   otherMonthText: {
     color: '#CBD5E1',
   },
-  todayText: {
+  activeDayText: {
     color: '#FFFFFF',
     fontWeight: '700',
   },
@@ -521,17 +459,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#D95C4F',
   },
-  remindersCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-  },
-  remindersTitle: {
+  sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
   },
-  remindersSubtitle: {
+  sectionSubtitle: {
     fontSize: 13,
     color: '#64748B',
     marginTop: 4,
@@ -580,13 +513,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#B91C1C',
   },
-  emptyReminderText: {
+  emptyText: {
     fontSize: 14,
     color: '#64748B',
     lineHeight: 20,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: 'transparent',
   },
 });

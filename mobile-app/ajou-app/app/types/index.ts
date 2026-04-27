@@ -10,17 +10,50 @@ export type NoticeCategory =
 
 export type LanguageOption = 'English' | 'Korean';
 
-export type StudentType =
-  | 'Undergraduate'
-  | 'Graduate'
-  | 'Exchange / Visiting';
-
-export type AcademicStatus =
-  | 'Enrolled'
-  | 'On Leave'
-  | 'Completed Coursework';
-
 export type ResidenceType = 'Dormitory' | 'Off-campus';
+
+export type LanguageInstituteStatus =
+  | 'Planned'
+  | 'Enrolled'
+  | 'Completed';
+
+export type LanguageInstituteTerm =
+  | 'Term 1'
+  | 'Term 2'
+  | 'Term 3'
+  | 'Term 4';
+
+export type AjouAdmissionTarget =
+  | 'March'
+  | 'June'
+  | 'September'
+  | 'December';
+
+export type VisaType = 'D-4' | 'D-2' | 'Other' | 'Unknown';
+
+export type TopikStatus = 'None' | 'Passed';
+
+export type TopikLevel =
+  | 'Level 1'
+  | 'Level 2'
+  | 'Level 3'
+  | 'Level 4'
+  | 'Level 5'
+  | 'Level 6';
+
+export type TopikTargetLevel = TopikLevel | 'None';
+
+export type TopikTestPlan =
+  | 'Scheduled'
+  | 'PlanningToRegister'
+  | 'NoPlan';
+
+export type InterestCategory =
+  | 'Visa'
+  | 'TOPIK'
+  | 'Admission'
+  | 'Scholarship'
+  | 'Life';
 
 export type NotificationFrequency = 'Low' | 'Medium' | 'High';
 
@@ -59,19 +92,22 @@ export type SavedNoticeReminder = {
 };
 
 export type UserProfileStatus = {
-  schoolEmail: string;
-  studentType: StudentType;
-  academicStatus: AcademicStatus;
-  year: string;
-  semester: string;
-  studentId: string;
-  visaType: string;
+  name: string;
+  email: string;
+  languageInstituteStatus: LanguageInstituteStatus;
+  languageInstituteTerm: LanguageInstituteTerm;
+  targetAdmissionTerm: AjouAdmissionTarget;
+  desiredMajor: string;
+  visaType: VisaType;
+  visaExpiryDate: string;
+  visaExpiryUnknown: boolean;
+  topikStatus: TopikStatus;
+  topikLevel: TopikLevel;
+  topikTargetLevel: TopikTargetLevel;
+  topikTestPlan: TopikTestPlan;
+  interests: InterestCategory[];
   preferredLanguage: LanguageOption;
   residenceType: ResidenceType;
-  topikStatus: string;
-  gpa: string;
-  major: string;
-  interests: NoticeCategory[];
 };
 
 export type AppContextType = {
