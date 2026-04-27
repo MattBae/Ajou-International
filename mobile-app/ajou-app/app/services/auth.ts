@@ -27,6 +27,13 @@ export const authService = {
     return await apiRequest<UserProfile>('/auth/me');
   },
 
+  async updateMe(fullName: string) {
+    return await apiRequest<UserProfile>('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify({ full_name: fullName }),
+    });
+  },
+
   async logout() {
     await clearToken();
   },

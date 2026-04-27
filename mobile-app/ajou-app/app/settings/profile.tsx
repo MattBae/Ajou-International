@@ -137,9 +137,15 @@ export default function ProfileScreen() {
     });
   };
 
-  const handleSave = () => {
-    setUserProfileStatus(form);
-    setSelectedLanguage(form.preferredLanguage);
+  const handleSave = async () => {
+    try {
+      await authService.updateMe(form.name);
+      setUserProfileStatus(form);
+      setSelectedLanguage(form.preferredLanguage);
+      Alert.alert("성공", "프로필이 저장되었습니다.");
+    } catch (e: any) {
+      Alert.alert("저장 실패", e.message || "프로필 저장 중 오류가 발생했습니다.");
+    }
   };
 
   return (
