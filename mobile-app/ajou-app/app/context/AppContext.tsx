@@ -1,5 +1,7 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { fetchNotices } from '../services/notices';
+import { authService } from '../services/auth';
+import { keywordService } from '../services/keywords';
 import type {
     AppContextType,
     LanguageOption,
@@ -13,217 +15,124 @@ import type {
 
 const initialUserProfileStatus: UserProfileStatus = {
   name: 'Student',
-  email: 'student@example.com',
+  email: '',
   languageInstituteStatus: 'Planned',
   languageInstituteTerm: 'Term 1',
   targetAdmissionTerm: 'September',
-  desiredMajor: 'Digital Media',
+  desiredMajor: '',
   visaType: 'D-2',
-  visaExpiryDate: '2026-08-31',
+  visaExpiryDate: '',
   visaExpiryUnknown: false,
   topikStatus: 'None',
   topikLevel: 'Level 4',
   topikTargetLevel: 'Level 4',
   topikTestPlan: 'Scheduled',
-  interests: ['Visa', 'TOPIK', 'Admission'],
+  interests: [],
   preferredLanguage: 'English',
   residenceType: 'Dormitory',
 };
 
-const initialSelectedLanguage: LanguageOption = 'English';
-
-const initialSelectedNoticeCategories: NoticeCategory[] = [
-  'Visa',
-  'TOPIK',
-  'Academic',
-];
-
-const initialNotificationFrequency: NotificationFrequency = 'Medium';
-
-const initialTasks: Task[] = [
-  {
-    id: 't1',
-    title: 'Prepare visa extension documents',
-    dueDate: '2026-04-09',
-    category: 'Visa',
-    isDone: false,
-    progress: 60,
-  },
-  {
-    id: 't2',
-    title: 'Check TOPIK application date',
-    dueDate: '2026-04-11',
-    category: 'TOPIK',
-    isDone: false,
-    progress: 20,
-  },
-  {
-    id: 't3',
-    title: 'Review course registration changes',
-    dueDate: '2026-04-08',
-    category: 'Academic',
-    isDone: true,
-    progress: 100,
-  },
-  {
-    id: 't4',
-    title: 'Plan weekly schedule',
-    dueDate: '2026-04-13',
-    category: 'General',
-    isDone: false,
-    progress: 40,
-  },
-];
-
-function normalizeReminderDate(dateText: string) {
-  const normalized = dateText.trim().replace(/\./g, '-');
-  const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-
-  if (!match) {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  const [, year, month, day] = match;
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-}
-
-function getReminderDueDate(notice: Notice) {
-  return normalizeReminderDate(notice.deadline ?? notice.date);
-}
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-type AppProviderProps = {
-  children: ReactNode;
-};
-
-export function AppProvider({ children }: AppProviderProps) {
-  const [userProfileStatus, setUserProfileStatus] = useState<UserProfileStatus>(
-    initialUserProfileStatus
-  );
-  const [selectedLanguage, setSelectedLanguage] =
-    useState<LanguageOption>(initialSelectedLanguage);
-  const [selectedNoticeCategories, setSelectedNoticeCategories] = useState<
-    NoticeCategory[]
-  >(initialSelectedNoticeCategories);
-  const [notificationFrequency, setNotificationFrequency] =
-    useState<NotificationFrequency>(initialNotificationFrequency);
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [userProfileStatus, setUserProfileStatus] = useState<UserProfileStatus>(initialUserProfileStatus);
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption>('English');
+  const [selectedNoticeCategories, setSelectedNoticeCategories] = useState<NoticeCategory[]>([]);
+  const [notificationFrequency, setNotificationFrequency] = useState<NotificationFrequency>('Medium');
+  
   const [notices, setNotices] = useState<Notice[]>([]);
   const [noticesLoading, setNoticesLoading] = useState(true);
   const [noticesError, setNoticesError] = useState<string | null>(null);
-  const [savedNoticeReminders, setSavedNoticeReminders] = useState<
-    SavedNoticeReminder[]
-  >([]);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [savedNoticeReminders, setSavedNoticeReminders] = useState<SavedNoticeReminder[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // 1. 초기 데이터 로드 (프로필 & 키워드)
+  useEffect(() => {
+    async function initSession() {
+      try {
+        const me = await authService.getMe();
+        if (me) {
+          setUserProfileStatus(prev => ({
+            ...prev,
+            name: me.full_name,
+            email: me.email
+          }));
+          
+          // 사용자의 구독 키워드 가져오기
+          const myKeys = await keywordService.getMyKeywords();
+          if (myKeys?.enabled) {
+            setSelectedNoticeCategories(myKeys.enabled.map(id => mapIdToCategory(id)));
+          }
+        }
+      } catch (e) {
+        console.log("Session init failed or no user logged in");
+      }
+    }
+    initSession();
+    refreshNotices();
+  }, []);
 
   async function refreshNotices() {
     try {
       setNoticesLoading(true);
       setNoticesError(null);
-
       const nextNotices = await fetchNotices();
       setNotices(nextNotices);
     } catch (error) {
-      setNoticesError(
-        error instanceof Error ? error.message : 'Failed to load notices.'
-      );
+      setNoticesError(error instanceof Error ? error.message : 'Failed to load notices.');
     } finally {
       setNoticesLoading(false);
     }
   }
 
-  useEffect(() => {
-    void refreshNotices();
-  }, []);
-
-  useEffect(() => {
-    if (notices.length === 0) {
-      return;
+  // 알림 토큰 업데이트 (로그인 후 호출 권장)
+  async function syncPushToken(token: string) {
+    try {
+      await authService.updatePushToken(token);
+    } catch (e) {
+      console.error("Failed to sync push token");
     }
-
-    setSavedNoticeReminders((prev) =>
-      prev.map((reminder) => {
-        const matchedNotice = notices.find((notice) => notice.id === reminder.noticeId);
-
-        if (!matchedNotice) {
-          return reminder;
-        }
-
-        const nextDueDate = getReminderDueDate(matchedNotice);
-
-        if (nextDueDate === reminder.dueDate) {
-          return reminder;
-        }
-
-        return {
-          ...reminder,
-          dueDate: nextDueDate,
-        };
-      })
-    );
-  }, [notices]);
-
-  function addNoticeReminder(notice: Notice) {
-    setSavedNoticeReminders((prev) => {
-      if (prev.some((item) => item.noticeId === notice.id)) {
-        return prev;
-      }
-
-      const reminder: SavedNoticeReminder = {
-        id: `reminder-${notice.id}`,
-        noticeId: notice.id,
-        title: notice.title,
-        dueDate: getReminderDueDate(notice),
-        category: notice.category,
-        summary: notice.summary,
-        link: notice.link,
-        isDone: false,
-        savedAt: new Date().toISOString(),
-      };
-
-      return [...prev, reminder].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-    });
   }
 
-  function removeNoticeReminder(noticeId: string) {
-    setSavedNoticeReminders((prev) =>
-      prev.filter((item) => item.noticeId !== noticeId)
-    );
+  // 키워드 업데이트 연동
+  async function updateCategories(categoriesOrUpdater: NoticeCategory[] | ((prev: NoticeCategory[]) => NoticeCategory[])) {
+    let nextCategories: NoticeCategory[];
+    if (typeof categoriesOrUpdater === 'function') {
+      nextCategories = categoriesOrUpdater(selectedNoticeCategories);
+    } else {
+      nextCategories = categoriesOrUpdater;
+    }
+    
+    setSelectedNoticeCategories(nextCategories);
+    try {
+      const allKeys = await keywordService.getAllKeywords();
+      const enabledIds = allKeys
+        .filter(k => nextCategories.includes(k.keyword as NoticeCategory))
+        .map(k => k.id);
+      await keywordService.updateMyKeywords(enabledIds);
+    } catch (e) {
+      console.error("Failed to update keywords on server");
+    }
   }
 
   function toggleNoticeReminder(notice: Notice) {
     setSavedNoticeReminders((prev) => {
-      if (prev.some((item) => item.noticeId === notice.id)) {
-        return prev.filter((item) => item.noticeId !== notice.id);
-      }
+      const isExist = prev.some((item) => item.noticeId === notice.id);
+      if (isExist) return prev.filter((item) => item.noticeId !== notice.id);
 
       const reminder: SavedNoticeReminder = {
         id: `reminder-${notice.id}`,
         noticeId: notice.id,
         title: notice.title,
-        dueDate: getReminderDueDate(notice),
+        dueDate: notice.deadline || notice.date,
         category: notice.category,
         summary: notice.summary,
         link: notice.link,
         isDone: false,
         savedAt: new Date().toISOString(),
       };
-
       return [...prev, reminder].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
     });
-  }
-
-  function toggleNoticeReminderDone(reminderId: string) {
-    setSavedNoticeReminders((prev) =>
-      prev.map((item) =>
-        item.id === reminderId
-          ? {
-              ...item,
-              isDone: !item.isDone,
-            }
-          : item
-      )
-    );
   }
 
   return (
@@ -234,7 +143,7 @@ export function AppProvider({ children }: AppProviderProps) {
         selectedLanguage,
         setSelectedLanguage,
         selectedNoticeCategories,
-        setSelectedNoticeCategories,
+        setSelectedNoticeCategories: updateCategories,
         notificationFrequency,
         setNotificationFrequency,
         notices,
@@ -243,10 +152,10 @@ export function AppProvider({ children }: AppProviderProps) {
         noticesError,
         refreshNotices,
         savedNoticeReminders,
-        addNoticeReminder,
-        removeNoticeReminder,
         toggleNoticeReminder,
-        toggleNoticeReminderDone,
+        addNoticeReminder: () => {}, // Not used in new UI
+        removeNoticeReminder: (id) => setSavedNoticeReminders(p => p.filter(i => i.noticeId !== id)),
+        toggleNoticeReminderDone: (id) => setSavedNoticeReminders(p => p.map(i => i.id === id ? {...i, isDone: !i.isDone} : i)),
         tasks,
         setTasks,
       }}
@@ -256,12 +165,21 @@ export function AppProvider({ children }: AppProviderProps) {
   );
 }
 
+function mapIdToCategory(id: number): NoticeCategory {
+  // 실제 DB ID와 매핑 로직 필요 (임시)
+  const map: Record<number, NoticeCategory> = {
+    1: 'Visa',
+    2: 'TOPIK',
+    3: 'Academic',
+    4: 'Events',
+    5: 'Scholarship',
+    6: 'Dormitory'
+  };
+  return map[id] || 'Academic';
+}
+
 export function useAppContext() {
   const context = useContext(AppContext);
-
-  if (!context) {
-    throw new Error('useAppContext must be used within an AppProvider');
-  }
-
+  if (!context) throw new Error('useAppContext must be used within an AppProvider');
   return context;
 }

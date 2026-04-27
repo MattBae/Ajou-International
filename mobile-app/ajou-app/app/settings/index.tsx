@@ -1,9 +1,24 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { authService } from '../services/auth';
 
 export default function SettingsScreen() {
   const router = useRouter();
+
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      { 
+        text: "Logout", 
+        style: "destructive",
+        onPress: async () => {
+          await authService.logout();
+          router.replace("/auth/login");
+        }
+      }
+    ]);
+  };
 
   const menuItems = [
     {
@@ -32,9 +47,7 @@ export default function SettingsScreen() {
       title: '로그아웃',
       subtitle: '앱에서 로그아웃해요',
       icon: 'log-out-outline',
-      onPress: () => {
-        console.log('Logout pressed');
-      },
+      onPress: handleLogout,
     },
   ] as const;
 
