@@ -12,15 +12,30 @@ import {
 import { fetchKeywords, fetchMe, fetchMyKeywords, getToken, updateMyKeywords } from "../api";
 import { getMyKeywordsCache } from "../api";
 
-export default function SettingsScreen() {
-  const [username, setUsername] = useState("");
-  const [keywords, setKeywords] = useState([]);
-  const [enabledSet, setEnabledSet] = useState(new Set());
-  const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [error, setError] = useState("");
-  const syncQueueRef = useRef(Promise.resolve());
-  const pendingSyncCountRef = useRef(0);
+interface KeywordItem {
+  id: number;
+  keyword: string;
+}
+
+interface UserProfile {
+  full_name?: string;
+  email?: string;
+  // Add other profile properties as needed
+}
+
+interface MyKeywordsResponse {
+  enabled: number[];
+}
+
+export default function SettingsScreen(): JSX.Element {
+  const [username, setUsername] = useState<string>("");
+  const [keywords, setKeywords] = useState<KeywordItem[]>([]);
+  const [enabledSet, setEnabledSet] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState<boolean>(true);
+  const [syncing, setSyncing] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const syncQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const pendingSyncCountRef = useRef<number>(0);
 
   const sortedKeywords = useMemo(() => {
     return [...keywords].sort((a, b) => {
@@ -38,7 +53,7 @@ export default function SettingsScreen() {
         setEnabledSet(new Set(cachedEnabled.map((value) => Number(value))));
       }
 
-      const allKeywordsRes = await fetchKeywords();
+      const allKeywordsRes: KeywordItem[] = await fetchKeywords();
       const nextKeywords = Array.isArray(allKeywordsRes) ? allKeywordsRes : [];
       setKeywords(nextKeywords);
 
@@ -49,21 +64,21 @@ export default function SettingsScreen() {
       }
 
       try {
-        const me = await fetchMe();
+        const me: UserProfile = await fetchMe();
         setUsername(me?.full_name || me?.email || "");
       } catch (_e) {
         // non-critical — greeting is optional
       }
 
       try {
-        const myKeywordsRes = await fetchMyKeywords(token);
+        const myKeywordsRes: MyKeywordsResponse = await fetchMyKeywords(token);
         const nextEnabled = Array.isArray(myKeywordsRes?.enabled) ? myKeywordsRes.enabled : [];
         setEnabledSet(new Set(nextEnabled.map((value) => Number(value))));
-      } catch (e) {
+      } catch (e: any) {
         setEnabledSet(new Set());
         setError(e?.message || "키워드 구독 상태를 불러오지 못했습니다.");
       }
-    } catch (e) {
+    } catch (e: any) {
       setError(e?.message || "Failed to load settings.");
     } finally {
       setLoading(false);
@@ -74,9 +89,9 @@ export default function SettingsScreen() {
     loadData();
   }, [loadData]);
 
-  const onToggleKeyword = useCallback((keyId) => {
+  const onToggleKeyword = useCallback((keyId: number) => {
     setError("");
-    let nextEnabled = [];
+    let nextEnabled: number[] = [];
     setEnabledSet((prev) => {
       const next = new Set(prev);
       if (next.has(keyId)) {
@@ -94,11 +109,11 @@ export default function SettingsScreen() {
     syncQueueRef.current = syncQueueRef.current
       .then(async () => {
         const token = await getToken();
-        const updated = await updateMyKeywords(token, nextEnabled);
+        const updated: MyKeywordsResponse = await updateMyKeywords(token, nextEnabled);
         const normalized = Array.isArray(updated?.enabled) ? updated.enabled : nextEnabled;
         setEnabledSet(new Set(normalized.map((value) => Number(value))));
       })
-      .catch((e) => {
+      .catch((e: any) => {
         const message = e?.message || "Failed to sync keyword preference.";
         setError(message);
         Alert.alert("Sync failed", message);

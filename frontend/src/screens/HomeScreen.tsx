@@ -3,11 +3,21 @@ import { Alert, Button, StyleSheet, Text, View } from "react-native";
 
 import { apiRequest, clearToken } from "../api";
 
-export default function HomeScreen({ onLogout }) {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(false);
+interface UserProfile {
+  email: string;
+  full_name: string;
+  // Add other profile properties as needed
+}
 
-  function isAuthError(message) {
+interface HomeScreenProps {
+  onLogout: () => void;
+}
+
+export default function HomeScreen({ onLogout }: HomeScreenProps): JSX.Element {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  function isAuthError(message: string): boolean {
     const msg = String(message || "").toLowerCase();
     return (
       msg.includes("missing or invalid bearer token") ||
@@ -22,9 +32,9 @@ export default function HomeScreen({ onLogout }) {
   const loadProfile = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiRequest("/auth/me");
+      const data = await apiRequest<UserProfile>("/auth/me");
       setProfile(data);
-    } catch (error) {
+    } catch (error: any) {
       const message = error?.message || "Unknown error";
       if (isAuthError(message)) {
         await clearToken();

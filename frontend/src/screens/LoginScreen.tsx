@@ -11,10 +11,16 @@ import {
 
 import { apiRequest, saveToken } from "../api";
 
-export default function LoginScreen({ onLoginSuccess, onGoSignup, onGoNoticeTest }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+interface LoginScreenProps {
+  onLoginSuccess: () => void;
+  onGoSignup: () => void;
+  onGoNoticeTest: () => void;
+}
+
+export default function LoginScreen({ onLoginSuccess, onGoSignup, onGoNoticeTest }: LoginScreenProps): JSX.Element {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   async function handleLogin() {
     if (!email || !password) {
@@ -23,13 +29,13 @@ export default function LoginScreen({ onLoginSuccess, onGoSignup, onGoNoticeTest
     }
     setLoading(true);
     try {
-      const data = await apiRequest("/auth/login", {
+      const data: { access_token: string } = await apiRequest("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
       await saveToken(data.access_token);
       onLoginSuccess();
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert("로그인 실패", error.message || "알 수 없는 오류가 발생했습니다.");
     } finally {
       setLoading(false);

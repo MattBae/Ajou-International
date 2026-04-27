@@ -12,7 +12,23 @@ import {
 
 import { fetchKeywords, fetchNotices, pingDatabase } from "../api";
 
-function formatKoreanDate(value) {
+interface Keyword {
+  id: string | null;
+  keyword: string;
+  isAll?: boolean;
+}
+
+interface Notice {
+  id: string;
+  title: string;
+  preview: string;
+  published_at: string;
+  keyword: string;
+  keyword_id: number;
+  // Add other notice properties as needed
+}
+
+function formatKoreanDate(value: string | Date): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) {
     return "";
@@ -20,16 +36,21 @@ function formatKoreanDate(value) {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
-export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
-  const [keywords, setKeywords] = useState([]);
-  const [selectedKeywordIds, setSelectedKeywordIds] = useState(new Set());
-  const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [dbUnavailable, setDbUnavailable] = useState(false);
+interface NoticeScreenProps {
+  onSelectNotice: (id: string) => void;
+  onOpenSettings: () => void;
+}
 
-  const toFriendlyMessage = useCallback((incoming) => {
+export default function NoticeScreen({ onSelectNotice, onOpenSettings }: NoticeScreenProps): React.JSX.Element {
+  const [keywords, setKeywords] = useState<Keyword[]>([]);
+  const [selectedKeywordIds, setSelectedKeywordIds] = useState<Set<string | null>>(new Set());
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [dbUnavailable, setDbUnavailable] = useState<boolean>(false);
+
+  const toFriendlyMessage = useCallback((incoming: string | undefined): string => {
     const text = String(incoming || "");
     if (text.includes("DB connection failed")) {
       return "서버 데이터베이스 연결이 불안정합니다. 잠시 후 다시 시도해 주세요.";
@@ -38,24 +59,24 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
   }, []);
 
   const loadKeywords = useCallback(async () => {
-    const data = await fetchKeywords();
+    const data: Keyword[] = await fetchKeywords();
     const incoming = Array.isArray(data) ? data : [];
-    const next = [{ id: null, keyword: "전체", isAll: true }, ...incoming];
+    const next: Keyword[] = [{ id: null, keyword: "전체", isAll: true }, ...incoming];
     setKeywords(next);
   }, []);
 
-  const loadNotices = useCallback(async (keywordIds) => {
-    let items;
+  const loadNotices = useCallback(async (keywordIds: Set<string | null>) => {
+    let items: Notice[];
 
     if (!keywordIds || keywordIds.size === 0) {
       // No filter — fetch all notices
-      const data = await fetchNotices(null);
+      const data: { items: Notice[] } = await fetchNotices(null);
       items = Array.isArray(data?.items) ? data.items : [];
     } else {
       // Fetch each selected keyword in parallel, then merge + deduplicate
       const requests = Array.from(keywordIds).map((id) => fetchNotices(id));
       const results = await Promise.all(requests);
-      const seen = new Set();
+      const seen = new Set<string>();
       items = [];
       for (const data of results) {
         for (const item of Array.isArray(data?.items) ? data.items : []) {
@@ -65,7 +86,7 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
           }
         }
       }
-      items.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+      items.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
     }
 
     setNotices(items);
@@ -76,12 +97,12 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
       if (nonAllCount > 0) {
         return prev;
       }
-      const derivedMap = new Map();
+      const derivedMap = new Map<number, Keyword>();
       for (const item of items) {
         const keywordIdValue = Number(item?.keyword_id);
         const keywordLabel = String(item?.keyword || "").trim();
         if (Number.isFinite(keywordIdValue) && keywordLabel) {
-          derivedMap.set(keywordIdValue, { id: keywordIdValue, keyword: keywordLabel });
+          derivedMap.set(keywordIdValue, { id: String(keywordIdValue), keyword: keywordLabel });
         }
       }
       if (!derivedMap.size) {
@@ -98,7 +119,7 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
     try {
       await pingDatabase();
       await loadKeywords();
-    } catch (e) {
+    } catch (e: any) {
       const nextMessage = toFriendlyMessage(e?.message);
       setError(nextMessage);
       if (String(e?.message || "").includes("DB connection failed")) {
@@ -123,7 +144,7 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
       setLoading(true);
       try {
         await loadNotices(selectedKeywordIds);
-      } catch (e) {
+      } catch (e: any) {
         if (!alive) {
           return;
         }
@@ -153,7 +174,7 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
       } else {
         await loadNotices(selectedKeywordIds);
       }
-    } catch (e) {
+    } catch (e: any) {
       const nextMessage = toFriendlyMessage(e?.message || "새로고침에 실패했습니다.");
       setError(nextMessage);
     } finally {
@@ -161,7 +182,7 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
     }
   }, [dbUnavailable, loadInitial, loadNotices, selectedKeywordIds, toFriendlyMessage]);
 
-  const onPressKeyword = useCallback((id) => {
+  const onPressKeyword = useCallback((id: string | null) => {
     setSelectedKeywordIds((prev) => {
       if (id === null) {
         // "전체" — clear all selections
@@ -213,7 +234,7 @@ export default function NoticeScreen({ onSelectNotice, onOpenSettings }) {
         })}
       </ScrollView>
 
-      <FlatList
+      <FlatList<Notice>
         data={notices}
         keyExtractor={(item) => item.id}
         style={styles.list}

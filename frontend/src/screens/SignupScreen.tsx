@@ -3,11 +3,16 @@ import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { apiRequest, saveToken } from "../api";
 
-export default function SignupScreen({ onGoLogin, onSignupSuccess }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [loading, setLoading] = useState(false);
+interface SignupScreenProps {
+  onGoLogin: () => void;
+  onSignupSuccess?: () => void;
+}
+
+export default function SignupScreen({ onGoLogin, onSignupSuccess }: SignupScreenProps): JSX.Element {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [fullName, setFullName] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   async function handleSignup() {
     if (!email || !password || !fullName) {
@@ -22,18 +27,15 @@ export default function SignupScreen({ onGoLogin, onSignupSuccess }) {
         method: "POST",
         body: JSON.stringify({ email, password, full_name: fullName }),
       });
-      const loginData = await apiRequest("/auth/login", {
+      const loginData: { access_token: string } = await apiRequest("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
       await saveToken(loginData.access_token);
       if (onSignupSuccess) {
         onSignupSuccess();
-      } else {
-        Alert.alert("Success", "Signup completed. Please login.");
-        onGoLogin();
       }
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert("Signup failed", error.message || "Unknown error");
     } finally {
       setLoading(false);

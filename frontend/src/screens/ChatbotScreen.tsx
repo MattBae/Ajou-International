@@ -11,26 +11,32 @@ import {
 } from "react-native";
 import { sendChatbotMessage } from "../api";
 
-export default function ChatbotScreen() {
-  const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+interface Message {
+  id: string;
+  text: string;
+  sender: "user" | "bot";
+}
+
+export default function ChatbotScreen(): JSX.Element {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const sendMessage = useCallback(async () => {
     if (inputMessage.trim() === "") return;
 
-    const newUserMessage = { id: String(messages.length + 1), text: inputMessage, sender: "user" };
+    const newUserMessage: Message = { id: String(messages.length + 1), text: inputMessage, sender: "user" };
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
     setInputMessage("");
     setLoading(true);
 
     try {
       const response = await sendChatbotMessage(inputMessage);
-      const newBotMessage = { id: String(messages.length + 2), text: response.answer, sender: "bot" };
+      const newBotMessage: Message = { id: String(messages.length + 2), text: response.answer, sender: "bot" };
       setMessages((prevMessages) => [...prevMessages, newBotMessage]);
     } catch (error) {
       console.error("Chatbot API error:", error);
-      const errorMessage = { id: String(messages.length + 2), text: "챗봇 응답을 가져오는 데 실패했습니다.", sender: "bot" };
+      const errorMessage: Message = { id: String(messages.length + 2), text: "챗봇 응답을 가져오는 데 실패했습니다.", sender: "bot" };
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setLoading(false);
@@ -43,7 +49,7 @@ export default function ChatbotScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
     >
-      <FlatList
+      <FlatList<Message> // Specify Message type for FlatList
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (

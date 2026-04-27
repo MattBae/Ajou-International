@@ -40,12 +40,16 @@ import NoticeScreen from "./src/screens/NoticeScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import SignupScreen from "./src/screens/SignupScreen";
 
-export default function App() {
-  const [screen, setScreen] = useState("login");
-  const [tab, setTab] = useState("notice");
-  const [selectedNoticeId, setSelectedNoticeId] = useState(null);
-  const [noticeView, setNoticeView] = useState("list");
-  const [initializing, setInitializing] = useState(true);
+type ScreenType = "login" | "signup" | "app";
+type TabType = "home" | "chatbot" | "notice";
+type NoticeViewType = "list" | "settings";
+
+export default function App(): JSX.Element {
+  const [screen, setScreen] = useState<ScreenType>("login");
+  const [tab, setTab] = useState<TabType>("notice");
+  const [selectedNoticeId, setSelectedNoticeId] = useState<string | null>(null);
+  const [noticeView, setNoticeView] = useState<NoticeViewType>("list");
+  const [initializing, setInitializing] = useState<boolean>(true);
 
   useEffect(() => {
     async function bootstrap() {
@@ -72,7 +76,7 @@ export default function App() {
     setSelectedNoticeId(null);
   };
 
-  const renderAuthedContent = () => {
+  const renderAuthedContent = (): JSX.Element | null => {
     if (tab === "home") {
       return <HomeScreen onLogout={handleLogout} />;
     }
@@ -102,7 +106,7 @@ export default function App() {
     return null;
   };
 
-  const onPressTab = (nextTab) => {
+  const onPressTab = (nextTab: TabType) => {
     setTab(nextTab);
     if (nextTab === "notice") {
       setNoticeView("list");
@@ -174,7 +178,14 @@ export default function App() {
   );
 }
 
-function TabButton({ label, icon, selected, onPress }) {
+interface TabButtonProps {
+  label: string;
+  icon: string;
+  selected: boolean;
+  onPress: () => void;
+}
+
+function TabButton({ label, icon, selected, onPress }: TabButtonProps): JSX.Element {
   return (
     <TouchableOpacity style={[styles.tabButton, selected ? styles.tabButtonSelected : null]} onPress={onPress}>
       <Text style={[styles.tabIcon, selected ? styles.tabTextSelected : styles.tabText]}>{icon}</Text>

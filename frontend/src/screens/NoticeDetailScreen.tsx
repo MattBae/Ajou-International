@@ -3,7 +3,18 @@ import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpac
 
 import { fetchNoticeDetail } from "../api";
 
-function formatKoreanDate(value) {
+interface NoticeDetail {
+  id: string;
+  title: string;
+  body: string;
+  preview: string;
+  url: string;
+  published_at: string;
+  keyword: string;
+  // Add other notice detail properties as needed
+}
+
+function formatKoreanDate(value: string | Date): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) {
     return "";
@@ -11,10 +22,15 @@ function formatKoreanDate(value) {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
-export default function NoticeDetailScreen({ noticeId, onBack }) {
-  const [notice, setNotice] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+interface NoticeDetailScreenProps {
+  noticeId: string;
+  onBack: () => void;
+}
+
+export default function NoticeDetailScreen({ noticeId, onBack }: NoticeDetailScreenProps): JSX.Element {
+  const [notice, setNotice] = useState<NoticeDetail | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -22,7 +38,7 @@ export default function NoticeDetailScreen({ noticeId, onBack }) {
     try {
       const detail = await fetchNoticeDetail(noticeId);
       setNotice(detail);
-    } catch (e) {
+    } catch (e: any) {
       setError(e?.message || "공지 상세를 불러오지 못했습니다.");
     } finally {
       setLoading(false);
