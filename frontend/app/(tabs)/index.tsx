@@ -1,11 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../context/AppContext';
+import { getCategoryLabel, t } from '../i18n';
+import type { NoticeCategory } from '../types';
 
 type HomeReminderItem = {
   id: string;
   title: string;
-  category: string;
+  category: NoticeCategory;
   dueDate: string;
   isDone: boolean;
   isUrgent: boolean;
@@ -13,8 +15,12 @@ type HomeReminderItem = {
 };
 
 export default function HomeScreen() {
-  const { notices, savedNoticeReminders, toggleNoticeReminderDone } =
-    useAppContext();
+  const {
+    notices,
+    savedNoticeReminders,
+    selectedLanguage,
+    toggleNoticeReminderDone,
+  } = useAppContext();
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const weekEndKey = getFutureDateKey(6);
@@ -63,16 +69,22 @@ export default function HomeScreen() {
     <View style={styles.screen}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.highlightCard}>
-          <Text style={styles.sectionLabel}>오늘의 공지</Text>
+          <Text style={styles.sectionLabel}>
+            {t(selectedLanguage, 'home.todayNotices')}
+          </Text>
 
           {todayNotices.length > 0 ? (
             todayNotices.map((item) => (
               <View key={item.id} style={styles.noticeItem}>
                 <View style={styles.noticeHeaderRow}>
-                  <Text style={styles.noticeCategory}>{item.category}</Text>
+                  <Text style={styles.noticeCategory}>
+                    {getCategoryLabel(selectedLanguage, item.category)}
+                  </Text>
                   {item.isCritical ? (
                     <View style={styles.noticeBadge}>
-                      <Text style={styles.noticeBadgeText}>중요</Text>
+                      <Text style={styles.noticeBadgeText}>
+                        {t(selectedLanguage, 'notices.important')}
+                      </Text>
                     </View>
                   ) : null}
                 </View>
@@ -80,17 +92,23 @@ export default function HomeScreen() {
                 <Text style={styles.noticeTitle}>{item.title}</Text>
                 <Text style={styles.noticeSummary}>{item.summary}</Text>
                 <Text style={styles.noticeDate}>
-                  {item.deadline ? `마감일 ${item.deadline}` : `게시일 ${item.date}`}
+                  {item.deadline
+                    ? `${t(selectedLanguage, 'notices.deadline')} ${item.deadline}`
+                    : `${t(selectedLanguage, 'notices.posted')} ${item.date}`}
                 </Text>
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>오늘 꼭 확인할 공지가 없습니다.</Text>
+            <Text style={styles.emptyText}>
+              {t(selectedLanguage, 'home.todayNoticesEmpty')}
+            </Text>
           )}
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>오늘 마감 공지</Text>
+          <Text style={styles.sectionTitle}>
+            {t(selectedLanguage, 'home.todayDeadlines')}
+          </Text>
 
           {todayDeadlines.length > 0 ? (
             todayDeadlines.map((reminder) => (
@@ -107,20 +125,25 @@ export default function HomeScreen() {
                 <View style={styles.rowTextWrap}>
                   <Text style={styles.taskTitle}>{reminder.title}</Text>
                   <Text style={styles.taskDate}>
-                    {reminder.category} · 마감 {reminder.dueDate}
+                    {getCategoryLabel(selectedLanguage, reminder.category)} ·{' '}
+                    {t(selectedLanguage, 'notices.deadline')} {reminder.dueDate}
                   </Text>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
-            <Text style={styles.emptyText}>오늘 마감으로 저장된 공지가 없습니다.</Text>
+            <Text style={styles.emptyText}>
+              {t(selectedLanguage, 'home.todayDeadlinesEmpty')}
+            </Text>
           )}
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>이번 주 할 일</Text>
+          <Text style={styles.sectionTitle}>
+            {t(selectedLanguage, 'home.weeklyTasks')}
+          </Text>
           <Text style={styles.sectionHint}>
-            캘린더에 저장한 공지 중 이번 주까지 처리해야 할 중요한 일정입니다.
+            {t(selectedLanguage, 'home.weeklyTasksHint')}
           </Text>
 
           {weeklyTasks.length > 0 ? (
@@ -145,19 +168,25 @@ export default function HomeScreen() {
                   <View style={styles.taskBadgeRow}>
                     {item.isCritical ? (
                       <View style={styles.inlineBadge}>
-                        <Text style={styles.inlineBadgeText}>중요</Text>
+                        <Text style={styles.inlineBadgeText}>
+                          {t(selectedLanguage, 'notices.important')}
+                        </Text>
                       </View>
                     ) : null}
 
                     {item.isUrgent ? (
                       <View style={styles.inlineBadgeUrgent}>
-                        <Text style={styles.inlineBadgeUrgentText}>임박</Text>
+                        <Text style={styles.inlineBadgeUrgentText}>
+                          {t(selectedLanguage, 'home.urgent')}
+                        </Text>
                       </View>
                     ) : null}
 
                     {item.isDone ? (
                       <View style={styles.inlineBadgeDone}>
-                        <Text style={styles.inlineBadgeDoneText}>완료</Text>
+                        <Text style={styles.inlineBadgeDoneText}>
+                          {t(selectedLanguage, 'home.done')}
+                        </Text>
                       </View>
                     ) : null}
                   </View>
@@ -166,20 +195,23 @@ export default function HomeScreen() {
                     {item.title}
                   </Text>
                   <Text style={[styles.taskDate, item.isDone && styles.taskDateDone]}>
-                    {item.category} · 마감 {item.dueDate}
+                    {getCategoryLabel(selectedLanguage, item.category)} ·{' '}
+                    {t(selectedLanguage, 'notices.deadline')} {item.dueDate}
                   </Text>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
             <Text style={styles.emptyText}>
-              이번 주까지 처리할 저장 공지가 없습니다.
+              {t(selectedLanguage, 'home.weeklyTasksEmpty')}
             </Text>
           )}
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.progressLabel}>진행률</Text>
+          <Text style={styles.progressLabel}>
+            {t(selectedLanguage, 'home.progress')}
+          </Text>
           <Text style={styles.progressNumber}>{progress}%</Text>
 
           <View style={styles.progressTrack}>
@@ -187,7 +219,8 @@ export default function HomeScreen() {
           </View>
 
           <Text style={styles.progressText}>
-            완료 {doneCount}개 · 남음 {totalCount - doneCount}개
+            {t(selectedLanguage, 'home.completed')} {doneCount} ·{' '}
+            {t(selectedLanguage, 'home.remaining')} {totalCount - doneCount}
           </Text>
         </View>
       </ScrollView>
@@ -207,9 +240,9 @@ function normalizeDateKey(dateText: string) {
 
 const styles = StyleSheet.create({
   screen: {
-  flex: 1,
-  backgroundColor: '#F4F6FB',
-},
+    flex: 1,
+    backgroundColor: '#F4F6FB',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F4F6FB',

@@ -48,7 +48,19 @@ type TranslationKey =
   | 'notices.saveDeadline'
   | 'notices.removeFromCalendar'
   | 'notices.emptyTitle'
-  | 'notices.emptyDescription';
+  | 'notices.emptyDescription'
+  | 'home.todayNotices'
+  | 'home.todayNoticesEmpty'
+  | 'home.todayDeadlines'
+  | 'home.todayDeadlinesEmpty'
+  | 'home.weeklyTasks'
+  | 'home.weeklyTasksHint'
+  | 'home.weeklyTasksEmpty'
+  | 'home.progress'
+  | 'home.completed'
+  | 'home.remaining'
+  | 'home.urgent'
+  | 'home.done';
 
 const translations: Record<LanguageOption, Record<TranslationKey, string>> = {
   Korean: {
@@ -60,7 +72,7 @@ const translations: Record<LanguageOption, Record<TranslationKey, string>> = {
     'headers.notices': '공지사항',
     'headers.calendar': '캘린더',
     'settings.title': '설정',
-    'settings.subtitle': '프로필, 언어, 알림 설정을 관리해보세요',
+    'settings.subtitle': '프로필, 언어, 알림 설정을 관리해보세요.',
     'settings.profile.title': '내 프로필',
     'settings.profile.subtitle': '입학 및 개인 정보를 확인하고 수정해요',
     'settings.language.title': '언어',
@@ -100,6 +112,19 @@ const translations: Record<LanguageOption, Record<TranslationKey, string>> = {
     'notices.removeFromCalendar': '캘린더에서 제거',
     'notices.emptyTitle': '공지사항이 없습니다',
     'notices.emptyDescription': '선택한 카테고리에 표시할 공지가 없습니다.',
+    'home.todayNotices': '오늘의 공지',
+    'home.todayNoticesEmpty': '오늘 꼭 확인할 공지가 없습니다.',
+    'home.todayDeadlines': '오늘 마감 공지',
+    'home.todayDeadlinesEmpty': '오늘 마감으로 저장된 공지가 없습니다.',
+    'home.weeklyTasks': '이번 주 할 일',
+    'home.weeklyTasksHint':
+      '캘린더에 저장한 공지 중 이번 주까지 처리해야 할 중요한 일정입니다.',
+    'home.weeklyTasksEmpty': '이번 주까지 처리할 저장 공지가 없습니다.',
+    'home.progress': '진행률',
+    'home.completed': '완료',
+    'home.remaining': '남음',
+    'home.urgent': '긴급',
+    'home.done': '완료',
   },
   English: {
     'tabs.home': 'Home',
@@ -150,6 +175,19 @@ const translations: Record<LanguageOption, Record<TranslationKey, string>> = {
     'notices.removeFromCalendar': 'Remove from calendar',
     'notices.emptyTitle': 'No notices',
     'notices.emptyDescription': 'There are no notices in the selected category.',
+    'home.todayNotices': "Today's Notices",
+    'home.todayNoticesEmpty': 'No notices to check today.',
+    'home.todayDeadlines': "Today's Deadlines",
+    'home.todayDeadlinesEmpty': 'No saved notices due today.',
+    'home.weeklyTasks': 'This Week',
+    'home.weeklyTasksHint':
+      'Important saved notices that should be handled by the end of this week.',
+    'home.weeklyTasksEmpty': 'No saved notices to handle this week.',
+    'home.progress': 'Progress',
+    'home.completed': 'Completed',
+    'home.remaining': 'Remaining',
+    'home.urgent': 'Urgent',
+    'home.done': 'Done',
   },
 };
 
