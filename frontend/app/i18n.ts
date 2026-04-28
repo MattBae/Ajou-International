@@ -1,4 +1,4 @@
-import type { LanguageOption } from './types';
+import type { LanguageOption, NoticeCategory } from './types';
 
 type TranslationKey =
   | 'tabs.home'
@@ -27,7 +27,28 @@ type TranslationKey =
   | 'settings.language.english'
   | 'settings.language.koreanSubtitle'
   | 'settings.language.englishSubtitle'
-  | 'settings.language.current';
+  | 'settings.language.current'
+  | 'menu.information'
+  | 'menu.visa'
+  | 'menu.topik'
+  | 'menu.register'
+  | 'menu.scholarship'
+  | 'menu.life'
+  | 'category.all'
+  | 'category.Visa'
+  | 'category.TOPIK'
+  | 'category.Academic'
+  | 'category.Events'
+  | 'category.Scholarship'
+  | 'category.Dormitory'
+  | 'notices.imageAttachment'
+  | 'notices.important'
+  | 'notices.deadline'
+  | 'notices.posted'
+  | 'notices.saveDeadline'
+  | 'notices.removeFromCalendar'
+  | 'notices.emptyTitle'
+  | 'notices.emptyDescription';
 
 const translations: Record<LanguageOption, Record<TranslationKey, string>> = {
   Korean: {
@@ -56,8 +77,29 @@ const translations: Record<LanguageOption, Record<TranslationKey, string>> = {
     'settings.language.korean': '한국어',
     'settings.language.english': '영어',
     'settings.language.koreanSubtitle': '앱 화면을 한국어로 표시합니다.',
-    'settings.language.englishSubtitle': 'Display the app in English.',
+    'settings.language.englishSubtitle': '앱 화면을 영어로 표시합니다.',
     'settings.language.current': '현재 언어',
+    'menu.information': '정보',
+    'menu.visa': '비자',
+    'menu.topik': 'TOPIK',
+    'menu.register': '입학',
+    'menu.scholarship': '장학금',
+    'menu.life': '생활',
+    'category.all': '전체',
+    'category.Visa': '비자',
+    'category.TOPIK': 'TOPIK',
+    'category.Academic': '입학',
+    'category.Events': '행사',
+    'category.Scholarship': '장학금',
+    'category.Dormitory': '기숙사',
+    'notices.imageAttachment': '이미지 첨부',
+    'notices.important': '중요',
+    'notices.deadline': '마감일',
+    'notices.posted': '게시일',
+    'notices.saveDeadline': '마감일 저장',
+    'notices.removeFromCalendar': '캘린더에서 제거',
+    'notices.emptyTitle': '공지사항이 없습니다',
+    'notices.emptyDescription': '선택한 카테고리에 표시할 공지가 없습니다.',
   },
   English: {
     'tabs.home': 'Home',
@@ -84,12 +126,42 @@ const translations: Record<LanguageOption, Record<TranslationKey, string>> = {
     'settings.language.screenSubtitle': 'Choose the language used in the app.',
     'settings.language.korean': 'Korean',
     'settings.language.english': 'English',
-    'settings.language.koreanSubtitle': '앱 화면을 한국어로 표시합니다.',
+    'settings.language.koreanSubtitle': 'Display the app in Korean.',
     'settings.language.englishSubtitle': 'Display the app in English.',
     'settings.language.current': 'Current Language',
+    'menu.information': 'Information',
+    'menu.visa': 'Visa',
+    'menu.topik': 'TOPIK',
+    'menu.register': 'Register',
+    'menu.scholarship': 'Scholarship',
+    'menu.life': 'Life',
+    'category.all': 'All',
+    'category.Visa': 'Visa',
+    'category.TOPIK': 'TOPIK',
+    'category.Academic': 'Academic',
+    'category.Events': 'Events',
+    'category.Scholarship': 'Scholarship',
+    'category.Dormitory': 'Dormitory',
+    'notices.imageAttachment': 'Image attached',
+    'notices.important': 'Important',
+    'notices.deadline': 'Deadline',
+    'notices.posted': 'Posted',
+    'notices.saveDeadline': 'Save deadline',
+    'notices.removeFromCalendar': 'Remove from calendar',
+    'notices.emptyTitle': 'No notices',
+    'notices.emptyDescription': 'There are no notices in the selected category.',
   },
 };
 
 export function t(language: LanguageOption, key: TranslationKey) {
   return translations[language][key];
+}
+
+export function getCategoryLabel(
+  language: LanguageOption,
+  category: NoticeCategory | 'All'
+) {
+  return category === 'All'
+    ? t(language, 'category.all')
+    : t(language, `category.${category}` as TranslationKey);
 }

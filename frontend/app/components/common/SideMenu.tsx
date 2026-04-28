@@ -1,21 +1,24 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAppContext } from '../../context/AppContext';
+import { t } from '../../i18n';
 
 type SideMenuProps = {
   onClose: () => void;
 };
 
 const menuItems = [
-  { key: 'visa', title: 'Visa', icon: 'card-outline' },
-  { key: 'topik', title: 'TOPIK', icon: 'language-outline' },
-  { key: 'register', title: 'Register', icon: 'document-text-outline' },
-  { key: 'scholarship', title: 'Scholarship', icon: 'school-outline' },
-  { key: 'life', title: 'Life', icon: 'home-outline' },
-];
+  { key: 'visa', labelKey: 'menu.visa', icon: 'card-outline' },
+  { key: 'topik', labelKey: 'menu.topik', icon: 'language-outline' },
+  { key: 'register', labelKey: 'menu.register', icon: 'document-text-outline' },
+  { key: 'scholarship', labelKey: 'menu.scholarship', icon: 'school-outline' },
+  { key: 'life', labelKey: 'menu.life', icon: 'home-outline' },
+] as const;
 
 export default function SideMenu({ onClose }: SideMenuProps) {
   const router = useRouter();
+  const { selectedLanguage } = useAppContext();
 
   const handlePress = (key: string) => {
     onClose();
@@ -31,7 +34,7 @@ export default function SideMenu({ onClose }: SideMenuProps) {
 
       <View style={styles.menu}>
         <View style={styles.header}>
-          <Text style={styles.title}>Information</Text>
+          <Text style={styles.title}>{t(selectedLanguage, 'menu.information')}</Text>
 
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close-outline" size={26} color="#0F172A" />
@@ -45,7 +48,7 @@ export default function SideMenu({ onClose }: SideMenuProps) {
             onPress={() => handlePress(item.key)}
           >
             <Ionicons name={item.icon as any} size={22} color="#E85D4A" />
-            <Text style={styles.menuText}>{item.title}</Text>
+            <Text style={styles.menuText}>{t(selectedLanguage, item.labelKey)}</Text>
             <Ionicons name="chevron-forward-outline" size={18} color="#94A3B8" />
           </TouchableOpacity>
         ))}

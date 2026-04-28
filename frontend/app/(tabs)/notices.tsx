@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../context/AppContext';
+import { getCategoryLabel, t } from '../i18n';
 import type { NoticeCategory } from '../types';
 
 const CATEGORIES: (NoticeCategory | 'All')[] = [
@@ -17,7 +18,12 @@ const CATEGORIES: (NoticeCategory | 'All')[] = [
 
 export default function NoticesScreen() {
   const router = useRouter();
-  const { notices, toggleNoticeReminder, savedNoticeReminders } = useAppContext();
+  const {
+    notices,
+    toggleNoticeReminder,
+    savedNoticeReminders,
+    selectedLanguage,
+  } = useAppContext();
   const [selectedCategory, setSelectedCategory] =
     useState<NoticeCategory | 'All'>('All');
 
@@ -40,7 +46,6 @@ export default function NoticesScreen() {
       >
         {CATEGORIES.map((category) => {
           const isActive = selectedCategory === category;
-          const label = category === 'All' ? '전체' : category;
 
           return (
             <TouchableOpacity
@@ -55,7 +60,7 @@ export default function NoticesScreen() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.82}
               >
-                {label}
+                {getCategoryLabel(selectedLanguage, category)}
               </Text>
             </TouchableOpacity>
           );
@@ -83,18 +88,24 @@ export default function NoticesScreen() {
                   activeOpacity={0.85}
                 >
                   <View style={styles.cardTopRow}>
-                    <Text style={styles.category}>{notice.category}</Text>
+                    <Text style={styles.category}>
+                      {getCategoryLabel(selectedLanguage, notice.category)}
+                    </Text>
 
                     <View style={styles.badgeRow}>
                       {notice.hasAttachmentOnly ? (
                         <View style={styles.imageBadge}>
-                          <Text style={styles.imageBadgeText}>이미지 첨부</Text>
+                          <Text style={styles.imageBadgeText}>
+                            {t(selectedLanguage, 'notices.imageAttachment')}
+                          </Text>
                         </View>
                       ) : null}
 
                       {notice.isCritical ? (
                         <View style={styles.badge}>
-                          <Text style={styles.badgeText}>중요</Text>
+                          <Text style={styles.badgeText}>
+                            {t(selectedLanguage, 'notices.important')}
+                          </Text>
                         </View>
                       ) : null}
                     </View>
@@ -106,8 +117,8 @@ export default function NoticesScreen() {
                   </Text>
                   <Text style={styles.date}>
                     {notice.deadline
-                      ? `마감일 ${notice.deadline}`
-                      : `게시일 ${notice.date}`}
+                      ? `${t(selectedLanguage, 'notices.deadline')} ${notice.deadline}`
+                      : `${t(selectedLanguage, 'notices.posted')} ${notice.date}`}
                   </Text>
                 </TouchableOpacity>
 
@@ -117,7 +128,9 @@ export default function NoticesScreen() {
                   activeOpacity={0.85}
                 >
                   <Text style={styles.saveButtonText}>
-                    {isSaved ? '캘린더에서 제거' : '마감일 저장'}
+                    {isSaved
+                      ? t(selectedLanguage, 'notices.removeFromCalendar')
+                      : t(selectedLanguage, 'notices.saveDeadline')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -126,9 +139,11 @@ export default function NoticesScreen() {
         ) : (
           <View style={styles.emptyCard}>
             <Ionicons name="document-text-outline" size={34} color="#94A3B8" />
-            <Text style={styles.emptyTitle}>공지사항이 없습니다</Text>
+            <Text style={styles.emptyTitle}>
+              {t(selectedLanguage, 'notices.emptyTitle')}
+            </Text>
             <Text style={styles.emptyDescription}>
-              선택한 카테고리에 표시할 공지가 없습니다.
+              {t(selectedLanguage, 'notices.emptyDescription')}
             </Text>
           </View>
         )}
