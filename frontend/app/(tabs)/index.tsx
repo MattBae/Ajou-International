@@ -119,7 +119,7 @@ export default function HomeScreen() {
                 activeOpacity={0.8}
               >
                 <View style={styles.checkBox}>
-                  <Ionicons name="alarm-outline" size={24} color="#D95C4F" />
+                  <Ionicons name="alarm-outline" size={24} color="#1E5AA8" />
                 </View>
 
                 <View style={styles.rowTextWrap}>
@@ -156,9 +156,9 @@ export default function HomeScreen() {
               >
                 <View style={styles.checkBox}>
                   {item.isDone ? (
-                    <Ionicons name="checkmark-circle" size={24} color="#0F766E" />
+                    <Ionicons name="checkmark-circle" size={24} color="#2563EB" />
                   ) : item.isUrgent ? (
-                    <Ionicons name="alarm-outline" size={24} color="#D95C4F" />
+                    <Ionicons name="alarm-outline" size={24} color="#1E5AA8" />
                   ) : (
                     <Ionicons name="ellipse-outline" size={24} color="#C0C7D1" />
                   )}
@@ -280,14 +280,14 @@ const styles = StyleSheet.create({
     color: '#B45309',
   },
   noticeBadge: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#DBEAFE',
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 10,
   },
   noticeBadgeText: {
     fontSize: 11,
-    color: '#B91C1C',
+    color: '#1D4ED8',
     fontWeight: '600',
   },
   noticeTitle: {
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -10,
   },
   taskRowDone: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#EFF6FF',
   },
   checkBox: {
     marginRight: 12,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   inlineBadge: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#DBEAFE',
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 9,
@@ -357,10 +357,10 @@ const styles = StyleSheet.create({
   inlineBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#B91C1C',
+    color: '#1D4ED8',
   },
   inlineBadgeUrgent: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#E0F2FE',
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 9,
@@ -368,10 +368,10 @@ const styles = StyleSheet.create({
   inlineBadgeUrgentText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#C2410C',
+    color: '#0369A1',
   },
   inlineBadgeDone: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#E0F2FE',
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 9,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   inlineBadgeDoneText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#166534',
+    color: '#0369A1',
   },
   taskTitle: {
     fontSize: 15,

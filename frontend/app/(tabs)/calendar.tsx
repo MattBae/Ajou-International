@@ -180,7 +180,7 @@ export default function CalendarScreen() {
                 <Ionicons
                   name={reminder.isDone ? 'checkmark-circle' : 'ellipse-outline'}
                   size={22}
-                  color={reminder.isDone ? '#0F766E' : '#CBD5E1'}
+                  color={reminder.isDone ? '#2563EB' : '#CBD5E1'}
                 />
               </TouchableOpacity>
 
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   activeModeButton: {
-    backgroundColor: '#D95C4F',
+    backgroundColor: '#1E5AA8',
   },
   modeButtonText: {
     fontSize: 14,
@@ -422,10 +422,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   todayCircle: {
-    backgroundColor: '#D95C4F',
+    backgroundColor: '#1E5AA8',
   },
   selectedCircle: {
-    backgroundColor: '#0F766E',
+    backgroundColor: '#2563EB',
   },
   dayText: {
     fontSize: 14,
@@ -451,13 +451,13 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#D95C4F',
+    backgroundColor: '#1E5AA8',
   },
   markerCount: {
     marginLeft: 4,
     fontSize: 10,
     fontWeight: '700',
-    color: '#D95C4F',
+    color: '#1E5AA8',
   },
   sectionTitle: {
     fontSize: 16,
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     marginLeft: 12,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#DBEAFE',
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   removeButtonText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#B91C1C',
+    color: '#1D4ED8',
   },
   emptyText: {
     fontSize: 14,

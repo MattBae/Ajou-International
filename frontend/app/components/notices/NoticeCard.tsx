@@ -44,10 +44,10 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#D95C4F',
+    color: '#1E5AA8',
   },
   badge: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#DBEAFE',
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#B91C1C',
+    color: '#1D4ED8',
   },
   title: {
     fontSize: 17,

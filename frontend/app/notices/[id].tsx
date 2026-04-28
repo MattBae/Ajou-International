@@ -173,17 +173,17 @@ const styles = StyleSheet.create({
   category: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#D95C4F',
+    color: '#1E5AA8',
   },
   badge: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#DBEAFE',
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 10,
   },
   badgeText: {
     fontSize: 11,
-    color: '#B91C1C',
+    color: '#1D4ED8',
     fontWeight: '600',
   },
   imageBadge: {
@@ -214,13 +214,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   primaryActionButton: {
-    backgroundColor: '#D95C4F',
+    backgroundColor: '#1E5AA8',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
   primaryActionButtonSaved: {
-    backgroundColor: '#0F766E',
+    backgroundColor: '#2563EB',
   },
   primaryActionText: {
     color: '#FFFFFF',
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   backButton: {
-    backgroundColor: '#D95C4F',
+    backgroundColor: '#1E5AA8',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',

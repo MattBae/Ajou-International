@@ -844,7 +844,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   activeStepButton: {
-    backgroundColor: '#D95C4F',
+    backgroundColor: '#1E5AA8',
   },
   stepText: {
     fontSize: 14,
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   unknownButtonTextSelected: {
-    color: '#D95C4F',
+    color: '#1E5AA8',
   },
   calendarCard: {
     marginTop: 14,
@@ -1030,7 +1030,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   optionButtonTextSelected: {
-    color: '#D95C4F',
+    color: '#1E5AA8',
   },
   dropdownButton: {
     minHeight: 48,
@@ -1072,10 +1072,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   dropdownItemTextSelected: {
-    color: '#D95C4F',
+    color: '#1E5AA8',
   },
   nextButton: {
-    backgroundColor: '#D95C4F',
+    backgroundColor: '#1E5AA8',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -1105,7 +1105,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#D95C4F',
+    backgroundColor: '#1E5AA8',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',

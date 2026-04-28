@@ -27,7 +27,7 @@ export default function SettingsMenuItem({
           <Ionicons
             name={icon}
             size={22}
-            color={isDanger ? '#DC2626' : '#D95C4F'}
+            color={isDanger ? '#DC2626' : '#1E5AA8'}
           />
         </View>
 

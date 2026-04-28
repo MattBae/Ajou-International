@@ -66,7 +66,7 @@ export default function LanguageSettingsScreen() {
 
               <View style={styles.iconSection}>
                 {isSelected ? (
-                  <Ionicons name="checkmark-circle" size={24} color="#D95C4F" />
+                  <Ionicons name="checkmark-circle" size={24} color="#1E5AA8" />
                 ) : (
                   <Ionicons name="ellipse-outline" size={24} color="#CBD5E1" />
                 )}
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   selectedOptionTitle: {
-    color: '#D95C4F',
+    color: '#1E5AA8',
   },
   optionSubtitle: {
     fontSize: 13,

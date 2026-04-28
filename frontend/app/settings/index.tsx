@@ -81,7 +81,7 @@ export default function SettingsScreen() {
                 <Ionicons
                   name={item.icon}
                   size={22}
-                  color={item.id === 'logout' ? '#DC2626' : '#D95C4F'}
+                  color={item.id === 'logout' ? '#DC2626' : '#1E5AA8'}
                 />
               </View>
 
