@@ -49,7 +49,7 @@ class Config:
 
     # Gemini (backend/.env에 GEMINI_API_KEY 추가)
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemini-1.5-flash")
+    GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemini-2.5-flash")
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
     TEMPERATURE = 0.3
     RETRIEVER_TOP_K = 3
