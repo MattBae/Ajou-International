@@ -87,8 +87,6 @@ class AzanChatbotService:
                 )
                 standalone_question = getattr(condense_result, "content", str(condense_result))
                 logger.info(f"Standalone Question: {standalone_question}")
-                # 과도한 호출 방지를 위해 약간의 지연
-                await asyncio.sleep(1.5)
             else:
                 standalone_question = question
             t_condense = loop.time() - t0

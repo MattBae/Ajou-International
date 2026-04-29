@@ -27,8 +27,7 @@ logger = logging.getLogger("azan.main")
 app = FastAPI(title="azan-api")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost", "http://127.0.0.1"],
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$",
+    allow_origins=["*"],  # 로컬 개발 및 핫스팟 환경을 위해 일시적으로 전체 허용
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -87,5 +86,6 @@ app.include_router(chatbot_router)
 
 
 if __name__ == "__main__":
+    # 환경변수 PORT가 없으면 8000 사용, 모든 인터페이스(0.0.0.0)에서 대기
     port = int(os.getenv("PORT", "8000"))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)

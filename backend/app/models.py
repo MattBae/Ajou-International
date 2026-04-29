@@ -32,6 +32,22 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     expo_push_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    
+    # 상세 프로필 정보
+    language_institute_status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    language_institute_term: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    target_admission_term: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    desired_major: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    visa_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    visa_expiry_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    visa_expiry_unknown: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    topik_status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    topik_level: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    topik_target_level: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    topik_test_plan: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    preferred_language: Mapped[str] = mapped_column(String, default="English", server_default="English")
+    residence_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -60,6 +76,7 @@ class Notice(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     preview: Mapped[str] = mapped_column(String, nullable=False)
     body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    eng_body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     source: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     hash: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_processed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
