@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { chatbotService } from '../services/chatbot';
 
@@ -22,6 +23,7 @@ interface Message {
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -32,18 +34,21 @@ export default function ChatScreen() {
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
-  const inputBottom = keyboardHeight > 0 ? keyboardHeight : 64 + insets.bottom;
+  const inputBottom = keyboardVisible ? keyboardHeight : tabBarHeight;
 
-  useEffect(() => {
+  React.useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', (event) => {
+      setKeyboardVisible(true);
       setKeyboardHeight(event.endCoordinates.height);
       requestAnimationFrame(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       });
     });
     const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
       setKeyboardHeight(0);
     });
 
@@ -97,7 +102,7 @@ export default function ChatScreen() {
         style={styles.messages}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: inputBottom + 84 },
+          { paddingBottom: 110 + inputBottom },
         ]}
         showsVerticalScrollIndicator={false}
         onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
@@ -137,7 +142,15 @@ export default function ChatScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.inputBar, { bottom: inputBottom }]}>
+      <View
+        style={[
+          styles.inputBar,
+          {
+            paddingBottom: Math.max(insets.bottom, 10),
+            bottom: inputBottom,
+          },
+        ]}
+      >
         <TextInput
           placeholder="질문을 입력하세요..."
           placeholderTextColor="#98A2B3"
@@ -197,7 +210,7 @@ const styles = StyleSheet.create({
   topicGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   topicButton: { width: '48%', backgroundColor: '#F7F8FF', borderWidth: 1, borderColor: '#D9E1FF', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 12, marginBottom: 10, flexDirection: 'row', alignItems: 'center' },
   topicText: { marginLeft: 8, fontSize: 13, color: '#4C5678', fontWeight: '600', flexShrink: 1 },
-  inputBar: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E7E7F2', paddingHorizontal: 16, paddingVertical: 10 },
+  inputBar: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E7E7F2', paddingHorizontal: 16, paddingTop: 10, zIndex: 20, elevation: 20 },
   input: { flex: 1, backgroundColor: '#F4F6FB', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: '#334155' },
   sendCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#5B6FB8', alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
 });

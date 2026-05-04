@@ -23,14 +23,18 @@ export default function HomeScreen() {
   } = useAppContext();
 
   const todayKey = new Date().toISOString().slice(0, 10);
+  const weekStartKey = getPastDateKey(6);
   const weekEndKey = getFutureDateKey(6);
   const urgentKey = getFutureDateKey(2);
 
   const noticeMap = new Map(notices.map((notice) => [notice.id, notice]));
 
-  const todayNotices = notices.filter(
-    (notice) => normalizeDateKey(notice.date) === todayKey
-  );
+  const weeklyNotices = notices
+    .filter((notice) => {
+      const noticeDate = normalizeDateKey(notice.date);
+      return noticeDate >= weekStartKey && noticeDate <= todayKey;
+    })
+    .sort((a, b) => normalizeDateKey(b.date).localeCompare(normalizeDateKey(a.date)));
 
   const todayDeadlines = savedNoticeReminders.filter(
     (item) => !item.isDone && item.dueDate === todayKey
@@ -70,43 +74,6 @@ export default function HomeScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.highlightCard}>
           <Text style={styles.sectionLabel}>
-            {t(selectedLanguage, 'home.todayNotices')}
-          </Text>
-
-          {todayNotices.length > 0 ? (
-            todayNotices.map((item) => (
-              <View key={item.id} style={styles.noticeItem}>
-                <View style={styles.noticeHeaderRow}>
-                  <Text style={styles.noticeCategory}>
-                    {getCategoryLabel(selectedLanguage, item.category)}
-                  </Text>
-                  {item.isCritical ? (
-                    <View style={styles.noticeBadge}>
-                      <Text style={styles.noticeBadgeText}>
-                        {t(selectedLanguage, 'notices.important')}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-
-                <Text style={styles.noticeTitle}>{item.title}</Text>
-                <Text style={styles.noticeSummary}>{item.summary}</Text>
-                <Text style={styles.noticeDate}>
-                  {item.deadline
-                    ? `${t(selectedLanguage, 'notices.deadline')} ${item.deadline}`
-                    : `${t(selectedLanguage, 'notices.posted')} ${item.date}`}
-                </Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>
-              {t(selectedLanguage, 'home.todayNoticesEmpty')}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
             {t(selectedLanguage, 'home.todayDeadlines')}
           </Text>
 
@@ -134,6 +101,43 @@ export default function HomeScreen() {
           ) : (
             <Text style={styles.emptyText}>
               {t(selectedLanguage, 'home.todayDeadlinesEmpty')}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>
+            {t(selectedLanguage, 'home.todayNotices')}
+          </Text>
+
+          {weeklyNotices.length > 0 ? (
+            weeklyNotices.map((item) => (
+              <View key={item.id} style={styles.noticeItem}>
+                <View style={styles.noticeHeaderRow}>
+                  <Text style={styles.noticeCategory}>
+                    {getCategoryLabel(selectedLanguage, item.category)}
+                  </Text>
+                  {item.isCritical ? (
+                    <View style={styles.noticeBadge}>
+                      <Text style={styles.noticeBadgeText}>
+                        {t(selectedLanguage, 'notices.important')}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                <Text style={styles.noticeTitle}>{item.title}</Text>
+                <Text style={styles.noticeSummary}>{item.summary}</Text>
+                <Text style={styles.noticeDate}>
+                  {item.deadline
+                    ? `${t(selectedLanguage, 'notices.deadline')} ${item.deadline}`
+                    : `${t(selectedLanguage, 'notices.posted')} ${item.date}`}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>
+              {t(selectedLanguage, 'home.todayNoticesEmpty')}
             </Text>
           )}
         </View>
@@ -231,6 +235,12 @@ export default function HomeScreen() {
 function getFutureDateKey(daysFromToday: number) {
   const date = new Date();
   date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
+function getPastDateKey(daysBeforeToday: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - daysBeforeToday);
   return date.toISOString().slice(0, 10);
 }
 
