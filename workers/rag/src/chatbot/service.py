@@ -86,9 +86,10 @@ class AzanChatbotService:
                     {"chat_history": chat_history, "question": question}
                 )
                 standalone_question = getattr(condense_result, "content", str(condense_result))
-                logger.info(f"Standalone Question: {standalone_question}")
+                logger.info(f"[Step 1] Condensing: '{question}' -> '{standalone_question}'")
             else:
                 standalone_question = question
+                logger.info(f"[Step 1] No chat history. Using original question: '{standalone_question}'")
             t_condense = loop.time() - t0
 
             # 3. DB 검색 (Retrieval) - 동기 코드를 별도 스레드에서 실행
@@ -99,6 +100,18 @@ class AzanChatbotService:
                 settings.RETRIEVER_TOP_K,
             )
             t_search = loop.time() - t1
+
+            # Log retrieved docs for demo
+            if retrieved_docs:
+                logger.info(f"[Step 2] Similarity Search Result ({len(retrieved_docs)} docs):")
+                for i, doc in enumerate(retrieved_docs):
+                    score = doc.metadata.get("score", "N/A")
+                    title = doc.metadata.get("title", "No Title")
+                    formatted_score = f"{score:.4f}" if isinstance(score, float) else score
+                    logger.info(f"  - Doc {i+1}: [{title}] (Score: {formatted_score})")
+            else:
+                logger.info("[Step 2] No relevant documents found.")
+
             context_text = self._format_to_toon(retrieved_docs) if retrieved_docs else "정보 없음"
 
             # 4. 최종 답변 생성 (Generation)

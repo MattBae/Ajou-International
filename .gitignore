@@ -1,6 +1,7 @@
 # 환경변수 파일 (절대 커밋하지 말 것)
 .env
 .env.local
+backend/.env
 
 .DS_Store
 __MACOSX/
