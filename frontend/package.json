@@ -10,6 +10,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "test": "jest --verbose --color",
     "sync:notices": "node ./scripts/sync-crawler-notices.js"
   },
   "dependencies": {
@@ -41,9 +42,18 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
+    "@babel/runtime": "^7.29.2",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.1.0",
+    "allure-jest": "^3.7.2",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "jest": "^30.3.0",
+    "jest-expo": "^55.0.17",
+    "jest-jasmine2": "^30.3.0",
+    "jest-spec-reporter": "^1.0.19",
+    "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.2"
   },
   "private": true
