@@ -7,7 +7,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from workers.crawlers.parser_list import parse_list
+from workers.crawlers_legacy.parser_list import parse_list
 
 @allure.feature("크롤러")
 @allure.story("리스트 파싱")

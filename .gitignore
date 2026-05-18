@@ -2,6 +2,7 @@
 .env
 .env.local
 backend/.env
+workers/.env
 
 .DS_Store
 __MACOSX/
