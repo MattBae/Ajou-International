@@ -9,7 +9,7 @@ import { authService } from '../services/auth';
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { selectedLanguage } = useAppContext();
+  const { selectedLanguage, setUserProfileStatus } = useAppContext();
 
   const handleLogout = () => {
     Alert.alert(
@@ -25,6 +25,11 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await authService.logout();
+            setUserProfileStatus((prev) => ({
+              ...prev,
+              name: 'Student',
+              email: '',
+            }));
             router.replace('/auth/login');
           },
         },
