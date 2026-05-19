@@ -1,0 +1,12 @@
+[
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-6c7d-8e9f0a1b2c3d",
+    "notice_id": "364475",
+    "keyword_id": 1,
+    "title": "2024 Fall Admission Guide",
+    "preview": "This is a preview of the admission guide.",
+    "body": "Full body of the admission guide...",
+    "published_at": "2023-10-01T10:00:00Z",
+    "url": "https://example.com/notice/364475"
+  }
+]

@@ -27,6 +27,7 @@ class NoticeCreateRequest(BaseModel):
     preview: Optional[str] = None
     source: Optional[str] = None
     url: Optional[str] = None
+    image_urls: Optional[list[str]] = None
     hash: Optional[str] = None
     is_processed: bool = False
     deadline: Optional[date] = None
@@ -99,6 +100,10 @@ def list_notices(
             Notice.id,
             Notice.title,
             Notice.preview,
+            Notice.body,
+            Notice.url,
+            Notice.deadline,
+            Notice.image_urls,
             Notice.published_at,
             Keyword.id,
             Keyword.keyword,
@@ -117,9 +122,24 @@ def list_notices(
                 "keyword": keyword,
                 "title": title,
                 "preview": preview,
+                "body": body,
+                "url": url,
+                "deadline": deadline,
+                "image_urls": image_urls or [],
                 "published_at": published_at,
             }
-            for (item_id, title, preview, published_at, keyword_id, keyword) in item_rows
+            for (
+                item_id,
+                title,
+                preview,
+                body,
+                url,
+                deadline,
+                image_urls,
+                published_at,
+                keyword_id,
+                keyword,
+            ) in item_rows
         ],
         "total": total,
         "limit": limit,
@@ -158,6 +178,7 @@ def create_notice(body: NoticeCreateRequest, db: Session = Depends(get_db)):
             hash=body.hash,
             is_processed=body.is_processed,
             deadline=body.deadline,
+            image_urls=body.image_urls or [],
             published_at=resolved_published_at,
         )
         db.add(notice)
@@ -204,6 +225,8 @@ def get_notice(notice_id: UUIDType, db: Session = Depends(get_db)):
         "eng_body": notice.eng_body,
         "preview": notice.preview,
         "url": notice.url,
+        "deadline": notice.deadline,
+        "image_urls": notice.image_urls or [],
         "keyword_id": notice.keyword_id,
         "keyword": keyword_row.keyword,
         "published_at": notice.published_at,

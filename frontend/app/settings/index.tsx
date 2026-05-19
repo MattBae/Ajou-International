@@ -1,13 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext } from '../context/AppContext';
 import { t } from '../i18n';
 import { authService } from '../services/auth';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { selectedLanguage } = useAppContext();
+  const insets = useSafeAreaInsets();
+  const { selectedLanguage, setUserProfileStatus } = useAppContext();
 
   const handleLogout = () => {
     Alert.alert(
@@ -23,6 +25,11 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await authService.logout();
+            setUserProfileStatus((prev) => ({
+              ...prev,
+              name: 'Student',
+              email: '',
+            }));
             router.replace('/auth/login');
           },
         },
@@ -62,7 +69,7 @@ export default function SettingsScreen() {
   ] as const;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 18 }]}>
       <Text style={styles.headerTitle}>{t(selectedLanguage, 'settings.title')}</Text>
       <Text style={styles.headerSubtitle}>
         {t(selectedLanguage, 'settings.subtitle')}

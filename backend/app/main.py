@@ -24,6 +24,11 @@ from .routers.notices import router as notices_router
 from .routers.chatbot import router as chatbot_router
 
 logger = logging.getLogger("azan.main")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stdout
+)
 app = FastAPI(title="azan-api")
 app.add_middleware(
     CORSMiddleware,

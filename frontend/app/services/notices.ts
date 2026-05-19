@@ -90,10 +90,13 @@ type WorkerNoticeShape = {
   id?: string | null;
   isCritical?: boolean | null;
   is_notice?: boolean | null;
+  image_urls?: string[] | null;
+  imageUrls?: string[] | null;
   link?: string | null;
   meta?: Record<string, unknown> | null;
   notice_tag?: string | null;
   ntt_id?: string | number | null;
+  preview?: string | null;
   published_at?: string | null;
   published_at_final?: string | null;
   raw_body?: string | null;
@@ -103,6 +106,7 @@ type WorkerNoticeShape = {
   summary?: string | null;
   title?: string | null;
   url?: string | null;
+  keyword?: string | null;
 };
 
 type RemotePayload =
@@ -171,20 +175,38 @@ function normalizeWorkerCategory(raw: WorkerNoticeShape): NoticeCategory {
     return normalizeCategory(raw.category);
   }
 
+  if (raw.keyword) {
+    return normalizeCategory(raw.keyword);
+  }
+
   return sourceCategory;
+}
+
+function formatDateKey(value: string | undefined | null): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+
+  return trimmed.slice(0, 10);
 }
 
 function pickDate(raw: WorkerNoticeShape): string {
   return (
-    raw.published_at_final?.trim() ||
-    raw.published_at?.trim() ||
-    raw.created_at?.trim() ||
+    formatDateKey(raw.published_at_final) ||
+    formatDateKey(raw.published_at) ||
+    formatDateKey(raw.created_at) ||
     new Date().toISOString().slice(0, 10)
   );
 }
 
 function pickDeadline(raw: WorkerNoticeShape): string | undefined {
-  return raw.deadline_at?.trim() || raw.deadline?.trim() || undefined;
+  return formatDateKey(raw.deadline_at) || formatDateKey(raw.deadline);
 }
 
 function hasAttachmentOnly(raw: WorkerNoticeShape): boolean {
@@ -241,6 +263,7 @@ function pickSummary(raw: WorkerNoticeShape): string {
   const summarySource =
     raw.deadline_text?.trim() ||
     raw.summary?.trim() ||
+    raw.preview?.trim() ||
     raw.description?.trim() ||
     raw.body?.trim();
 
@@ -272,7 +295,17 @@ function isCriticalNotice(raw: WorkerNoticeShape): boolean {
   return Boolean(raw.deadline || raw.deadline_at || raw.is_notice);
 }
 
+function pickImageUrls(raw: WorkerNoticeShape): string[] {
+  const urls = raw.image_urls ?? raw.imageUrls ?? [];
+
+  return Array.isArray(urls)
+    ? urls.filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+    : [];
+}
+
 function normalizeWorkerNotice(raw: WorkerNoticeShape, index: number): Notice {
+  const imageUrls = pickImageUrls(raw);
+
   return {
     id: String(
       raw.id ??
@@ -287,7 +320,7 @@ function normalizeWorkerNotice(raw: WorkerNoticeShape, index: number): Notice {
     summary: pickSummary(raw),
     date: pickDate(raw),
     deadline: pickDeadline(raw),
-    hasAttachmentOnly: hasAttachmentOnly(raw),
+    hasAttachmentOnly: hasAttachmentOnly(raw) || imageUrls.length > 0,
     isCritical: isCriticalNotice(raw),
     description:
       raw.description?.trim() ||
@@ -295,6 +328,7 @@ function normalizeWorkerNotice(raw: WorkerNoticeShape, index: number): Notice {
       raw.raw_body?.trim() ||
       undefined,
     link: raw.link?.trim() || raw.source_url?.trim() || raw.url?.trim() || undefined,
+    imageUrls,
   };
 }
 
@@ -306,7 +340,9 @@ function normalizeNotice(
     'category_final' in raw ||
     'dedupe_hash' in raw ||
     'source_url' in raw ||
+    'preview' in raw ||
     'published_at_final' in raw ||
+    'published_at' in raw ||
     'deadline_at' in raw ||
     'url' in raw
   ) {

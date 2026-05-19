@@ -14,9 +14,10 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    Uuid,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
 
@@ -27,7 +28,7 @@ class User(Base):
     # 사용자 계정 테이블 모델
     __tablename__ = "users"
 
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
@@ -70,7 +71,7 @@ class Notice(Base):
         ),
     )
 
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
     notice_id: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     keyword_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("keywords.id"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
@@ -82,6 +83,7 @@ class Notice(Base):
     is_processed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     deadline: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    image_urls: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -109,14 +111,13 @@ class UserKeyword(Base):
         Index("ix_user_keywords_user_id", "user_id"),
     )
 
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True)
+    user_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id"), primary_key=True)
     keyword_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("keywords.id"), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     user: Mapped[User] = relationship("User", back_populates="keyword_subscriptions")
     keyword: Mapped[Keyword] = relationship("Keyword", back_populates="user_links")
-
 
 class AlertOutbox(Base):
     # 알림 발송 대기 큐 테이블 모델
@@ -127,8 +128,8 @@ class AlertOutbox(Base):
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    notice_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("notices.id"), nullable=False)
+    user_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    notice_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("notices.id"), nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False, default="pending", server_default="pending")
     try_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

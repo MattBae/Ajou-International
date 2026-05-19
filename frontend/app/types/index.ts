@@ -29,6 +29,9 @@ export type AjouAdmissionTarget =
   | 'September'
   | 'December';
 
+export type CurrentStatus = 'Planned' | 'LanguageSchool';
+export type LanguageSchoolSemester = '1' | '2' | '3' | '4';
+
 export type VisaType = 'D-4' | 'D-2' | 'Other' | 'Unknown';
 
 export type TopikStatus = 'None' | 'Passed';
@@ -68,6 +71,7 @@ export type Notice = {
   isCritical?: boolean;
   description?: string;
   link?: string;
+  imageUrls?: string[];
 };
 
 export type Task = {
@@ -94,6 +98,9 @@ export type SavedNoticeReminder = {
 export type UserProfileStatus = {
   name: string;
   email: string;
+  nationality?: string;
+  currentStatus?: CurrentStatus;
+  languageSchoolSemester?: LanguageSchoolSemester;
   languageInstituteStatus: LanguageInstituteStatus;
   languageInstituteTerm: LanguageInstituteTerm;
   targetAdmissionTerm: AjouAdmissionTarget;
@@ -132,6 +139,8 @@ export type AppContextType = {
   noticesLoading: boolean;
   noticesError: string | null;
   refreshNotices: () => Promise<void>;
+  refreshCurrentStatus: () => Promise<void>;
+  statusCheckedAt: string | null;
   savedNoticeReminders: SavedNoticeReminder[];
   addNoticeReminder: (notice: Notice) => void;
   removeNoticeReminder: (noticeId: string) => void;
@@ -140,4 +149,5 @@ export type AppContextType = {
 
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  isAuthInitialized: boolean;
 };

@@ -4,6 +4,7 @@ import logging
 from typing import List
 
 import psycopg2
+from psycopg2 import pool
 from langchain_core.documents import Document
 
 from .RAG_config import settings
@@ -13,29 +14,49 @@ logger = logging.getLogger("RAG")
 
 
 class VectorStore:
+    _pool = None
+
     def __init__(self):
         try:
             self.embeddings = Embedder().get_embedding_function()
+            # 클래스 레벨에서 커넥션 풀 초기화 (싱글톤 패턴과 유사하게 동작)
+            if VectorStore._pool is None:
+                # SSL 설정 추가: Neon DB 등 클라우드 DB는 필수인 경우가 많음
+                db_params = settings.DB_PARAMS.copy()
+                if "host" in db_params and "localhost" not in db_params["host"]:
+                    db_params["sslmode"] = "require"
+                
+                VectorStore._pool = pool.SimpleConnectionPool(
+                    minconn=1,
+                    maxconn=20,
+                    **db_params
+                )
+                logger.info(f"DB Connection Pool initialized (max_conn=20, sslmode={db_params.get('sslmode', 'none')})")
         except Exception as e:
-            logger.error("임베딩 모델 초기화 실패: %s", e)
+            logger.error("초기화 실패: %s", e)
             raise
 
     def get_connection(self):
-        """백엔드와 동일한 DB 연결 (RAG_config에서 backend/.env 기반으로 설정)."""
+        """풀에서 커넥션 획득"""
         try:
-            conn = psycopg2.connect(**settings.DB_PARAMS)
-            return conn
+            return VectorStore._pool.getconn()
         except Exception as e:
-            logger.error("DB 연결 실패: %s", e)
+            logger.error("커넥션 획득 실패: %s", e)
             raise
 
+    def release_connection(self, conn):
+        """풀에 커넥션 반납"""
+        try:
+            VectorStore._pool.putconn(conn)
+        except Exception as e:
+            logger.error("커넥션 반납 실패: %s", e)
+
     def similarity_search(self, query: str, k: int = 3) -> List[Document]:
-        """질문과 유사한 공지 검색. 백엔드 notices 테이블 컬럼명(title, body, url) 사용."""
+        """질문과 유사한 공지 검색. 커넥션 풀 사용."""
         conn = self.get_connection()
         cursor = conn.cursor()
         try:
-            query_embedding = self.embeddings.embed_query(text = query, output_dimensionality = 1536)
-            # 백엔드 스키마: title, body, url, deadline, embedding (NULL 제외)
+            query_embedding = self.embeddings.embed_query(text=query, output_dimensionality=1536)
             search_query = """
                 SELECT title, body, url, deadline, 1 - (embedding <=> %s::vector) AS similarity
                 FROM notices
@@ -53,7 +74,7 @@ class VectorStore:
                         "source_url": row[2],
                         "url": row[2],
                         "deadline": row[3],
-                        "deadline_at": row[3],  # 챗봇 포맷 호환
+                        "deadline_at": row[3],
                         "score": row[4],
                     },
                 )
@@ -64,4 +85,4 @@ class VectorStore:
             return []
         finally:
             cursor.close()
-            conn.close()
+            self.release_connection(conn)

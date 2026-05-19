@@ -1,9 +1,11 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { fetchNotices } from '../services/notices';
 import { authService } from '../services/auth';
+import { getToken } from '../services/api';
 import { keywordService } from '../services/keywords';
 import type {
     AppContextType,
+    InterestCategory,
     LanguageOption,
     Notice,
     NoticeCategory,
@@ -16,6 +18,9 @@ import type {
 const initialUserProfileStatus: UserProfileStatus = {
   name: 'Student',
   email: '',
+  nationality: '',
+  currentStatus: 'Planned',
+  languageSchoolSemester: '1',
   languageInstituteStatus: 'Planned',
   languageInstituteTerm: 'Term 1',
   targetAdmissionTerm: 'September',
@@ -45,18 +50,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [noticesError, setNoticesError] = useState<string | null>(null);
   const [savedNoticeReminders, setSavedNoticeReminders] = useState<SavedNoticeReminder[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [isAuthInitialized, setIsAuthInitialized] = useState(false);
+  const [statusCheckedAt, setStatusCheckedAt] = useState<string | null>(null);
 
-  // 1. 초기 데이터 로드 (프로필 & 키워드)
+  // Load the saved session, profile, keywords, and notices on app start.
   useEffect(() => {
     async function initSession() {
       try {
+        const token = await getToken();
+        if (!token) {
+          return;
+        }
+
         const me = await authService.getMe();
         if (me) {
           const profileData: UserProfileStatus = {
             ...initialUserProfileStatus,
             name: me.full_name,
             email: me.email,
-            // 백엔드 필드가 있을 경우 덮어씌우기
             languageInstituteStatus: (me as any).language_institute_status || initialUserProfileStatus.languageInstituteStatus,
             languageInstituteTerm: (me as any).language_institute_term || initialUserProfileStatus.languageInstituteTerm,
             targetAdmissionTerm: (me as any).target_admission_term || initialUserProfileStatus.targetAdmissionTerm,
@@ -68,6 +79,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             topikLevel: (me as any).topik_level || initialUserProfileStatus.topikLevel,
             topikTargetLevel: (me as any).topik_target_level || initialUserProfileStatus.topikTargetLevel,
             topikTestPlan: (me as any).topik_test_plan || initialUserProfileStatus.topikTestPlan,
+            nationality: (me as any).nationality || initialUserProfileStatus.nationality,
+            currentStatus: (me as any).current_status || initialUserProfileStatus.currentStatus,
+            languageSchoolSemester:
+              (me as any).language_school_semester || initialUserProfileStatus.languageSchoolSemester,
             preferredLanguage: (me as any).preferred_language || initialUserProfileStatus.preferredLanguage,
             residenceType: (me as any).residence_type || initialUserProfileStatus.residenceType,
           };
@@ -75,14 +90,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setUserProfileStatus(profileData);
           setSelectedLanguage(profileData.preferredLanguage);
           
-          // 사용자의 구독 키워드 가져오기
-          const myKeys = await keywordService.getMyKeywords();
-          if (myKeys?.enabled) {
-            setSelectedNoticeCategories(myKeys.enabled.map(id => mapIdToCategory(id)));
+          try {
+            const myKeys = await keywordService.getMyKeywords();
+            if (myKeys?.enabled) {
+              const categories = myKeys.enabled.map(id => mapIdToCategory(id));
+              setSelectedNoticeCategories(categories);
+              setUserProfileStatus((prev) => ({
+                ...prev,
+                interests: categories.map(mapCategoryToInterest),
+              }));
+            }
+          } catch (e) {
+            console.error("Failed to load keywords", e);
+          // Keep local profile state usable even if keyword loading fails.
           }
         }
       } catch {
         console.log("Session init failed or no user logged in");
+      } finally {
+        setIsAuthInitialized(true);
       }
     }
     initSession();
@@ -102,8 +128,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // 알림 토큰 업데이트 (로그인 후 호출 권장)
-  // 키워드 업데이트 연동
+  async function refreshCurrentStatus() {
+    try {
+      setNoticesLoading(true);
+      setNoticesError(null);
+
+      const token = await getToken();
+      const [nextNotices, me] = await Promise.all([
+        fetchNotices(),
+        token ? authService.getMe().catch(() => null) : Promise.resolve(null),
+      ]);
+
+      setNotices(nextNotices);
+
+      if (me) {
+        const profileData: UserProfileStatus = {
+          ...initialUserProfileStatus,
+          name: me.full_name,
+          email: me.email,
+          languageInstituteStatus: (me as any).language_institute_status || initialUserProfileStatus.languageInstituteStatus,
+          languageInstituteTerm: (me as any).language_institute_term || initialUserProfileStatus.languageInstituteTerm,
+          targetAdmissionTerm: (me as any).target_admission_term || initialUserProfileStatus.targetAdmissionTerm,
+          desiredMajor: (me as any).desired_major || initialUserProfileStatus.desiredMajor,
+          visaType: (me as any).visa_type || initialUserProfileStatus.visaType,
+          visaExpiryDate: (me as any).visa_expiry_date || initialUserProfileStatus.visaExpiryDate,
+          visaExpiryUnknown: (me as any).visa_expiry_unknown ?? initialUserProfileStatus.visaExpiryUnknown,
+          topikStatus: (me as any).topik_status || initialUserProfileStatus.topikStatus,
+          topikLevel: (me as any).topik_level || initialUserProfileStatus.topikLevel,
+          topikTargetLevel: (me as any).topik_target_level || initialUserProfileStatus.topikTargetLevel,
+          topikTestPlan: (me as any).topik_test_plan || initialUserProfileStatus.topikTestPlan,
+          nationality: (me as any).nationality || initialUserProfileStatus.nationality,
+          currentStatus: (me as any).current_status || initialUserProfileStatus.currentStatus,
+          languageSchoolSemester:
+            (me as any).language_school_semester || initialUserProfileStatus.languageSchoolSemester,
+          preferredLanguage: (me as any).preferred_language || initialUserProfileStatus.preferredLanguage,
+          residenceType: (me as any).residence_type || initialUserProfileStatus.residenceType,
+        };
+
+        setUserProfileStatus(profileData);
+      }
+
+      setStatusCheckedAt(new Date().toISOString());
+    } catch (error) {
+      setNoticesError(error instanceof Error ? error.message : 'Failed to load notices.');
+    } finally {
+      setNoticesLoading(false);
+    }
+  }
+
+  // Sync keyword subscriptions with the backend.
   async function updateCategories(categoriesOrUpdater: NoticeCategory[] | ((prev: NoticeCategory[]) => NoticeCategory[])) {
     let nextCategories: NoticeCategory[];
     if (typeof categoriesOrUpdater === 'function') {
@@ -113,6 +186,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     
     setSelectedNoticeCategories(nextCategories);
+    setUserProfileStatus((prev) => ({
+      ...prev,
+      interests: nextCategories.map(mapCategoryToInterest),
+    }));
     try {
       const allKeys = await keywordService.getAllKeywords();
       const enabledIds = allKeys
@@ -160,6 +237,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         noticesLoading,
         noticesError,
         refreshNotices,
+        refreshCurrentStatus,
+        statusCheckedAt,
         savedNoticeReminders,
         toggleNoticeReminder,
         addNoticeReminder: () => {}, // Not used in new UI
@@ -167,6 +246,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleNoticeReminderDone: (id) => setSavedNoticeReminders(p => p.map(i => i.id === id ? {...i, isDone: !i.isDone} : i)),
         tasks,
         setTasks,
+        isAuthInitialized,
       }}
     >
       {children}
@@ -175,7 +255,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 }
 
 function mapIdToCategory(id: number): NoticeCategory {
-  // 실제 DB ID와 매핑 로직 필요 (임시)
+  // Temporary mapping for backend keyword IDs.
   const map: Record<number, NoticeCategory> = {
     1: 'Visa',
     2: 'TOPIK',
@@ -185,6 +265,18 @@ function mapIdToCategory(id: number): NoticeCategory {
     6: 'Dormitory'
   };
   return map[id] || 'Academic';
+}
+
+function mapCategoryToInterest(category: NoticeCategory): InterestCategory {
+  switch (category) {
+    case 'Academic':
+      return 'Admission';
+    case 'Dormitory':
+    case 'Events':
+      return 'Life';
+    default:
+      return category;
+  }
 }
 
 export function useAppContext() {
