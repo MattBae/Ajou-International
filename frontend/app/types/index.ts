@@ -71,6 +71,7 @@ export type Notice = {
   isCritical?: boolean;
   description?: string;
   link?: string;
+  imageUrls?: string[];
 };
 
 export type Task = {

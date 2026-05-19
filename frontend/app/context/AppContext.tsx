@@ -37,11 +37,6 @@ const initialUserProfileStatus: UserProfileStatus = {
   residenceType: 'Dormitory',
 };
 
-const WEEKLY_DEMO_NOTICE_IDS = [
-  'demo-oia-short-term-2026',
-  'demo-topik-106th-2026',
-];
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -58,7 +53,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isAuthInitialized, setIsAuthInitialized] = useState(false);
   const [statusCheckedAt, setStatusCheckedAt] = useState<string | null>(null);
 
-  // 1. 초기 데이터 로드 (프로필 & 키워드)
+  // Load the saved session, profile, keywords, and notices on app start.
   useEffect(() => {
     async function initSession() {
       try {
@@ -90,7 +85,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
               (me as any).language_school_semester || initialUserProfileStatus.languageSchoolSemester,
             preferredLanguage: (me as any).preferred_language || initialUserProfileStatus.preferredLanguage,
             residenceType: (me as any).residence_type || initialUserProfileStatus.residenceType,
-            // 다른 필드들도 필요시 업데이트
           };
 
           setUserProfileStatus(profileData);
@@ -108,8 +102,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
           } catch (e) {
             console.error("Failed to load keywords", e);
-          // 사용자의 구독 키워드 가져오기
-          // 사용자의 구독 키워드 가져오기
+          // Keep local profile state usable even if keyword loading fails.
           }
         }
       } catch {
@@ -120,7 +113,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     initSession();
     refreshNotices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function refreshNotices() {
@@ -128,9 +120,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setNoticesLoading(true);
       setNoticesError(null);
       const nextNotices = await fetchNotices();
-      const noticesWithDemo = withWeeklyDemoNotices(nextNotices);
-      setNotices(noticesWithDemo);
-      ensureWeeklyDemoReminders(noticesWithDemo);
+      setNotices(nextNotices);
     } catch (error) {
       setNoticesError(error instanceof Error ? error.message : 'Failed to load notices.');
     } finally {
@@ -149,9 +139,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         token ? authService.getMe().catch(() => null) : Promise.resolve(null),
       ]);
 
-      const noticesWithDemo = withWeeklyDemoNotices(nextNotices);
-      setNotices(noticesWithDemo);
-      ensureWeeklyDemoReminders(noticesWithDemo);
+      setNotices(nextNotices);
 
       if (me) {
         const profileData: UserProfileStatus = {
@@ -188,8 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // 알림 토큰 업데이트 (로그인 후 호출 권장)
-  // 키워드 업데이트 연동
+  // Sync keyword subscriptions with the backend.
   async function updateCategories(categoriesOrUpdater: NoticeCategory[] | ((prev: NoticeCategory[]) => NoticeCategory[])) {
     let nextCategories: NoticeCategory[];
     if (typeof categoriesOrUpdater === 'function') {
@@ -234,34 +221,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  function ensureWeeklyDemoReminders(sourceNotices: Notice[]) {
-    setSavedNoticeReminders((prev) => {
-      const existingIds = new Set(prev.map((item) => item.noticeId));
-      const demoReminders = sourceNotices
-        .filter((notice) => WEEKLY_DEMO_NOTICE_IDS.includes(notice.id))
-        .filter((notice) => !existingIds.has(notice.id))
-        .map((notice) => ({
-          id: `reminder-${notice.id}`,
-          noticeId: notice.id,
-          title: notice.title,
-          dueDate: notice.deadline || notice.date,
-          category: notice.category,
-          summary: notice.summary,
-          link: notice.link,
-          isDone: false,
-          savedAt: new Date().toISOString(),
-        }));
-
-      if (demoReminders.length === 0) {
-        return prev;
-      }
-
-      return [...prev, ...demoReminders].sort((a, b) =>
-        a.dueDate.localeCompare(b.dueDate)
-      );
-    });
-  }
-
   return (
     <AppContext.Provider
       value={{
@@ -296,7 +255,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 }
 
 function mapIdToCategory(id: number): NoticeCategory {
-  // 실제 DB ID와 매핑 로직 필요 (임시)
+  // Temporary mapping for backend keyword IDs.
   const map: Record<number, NoticeCategory> = {
     1: 'Visa',
     2: 'TOPIK',
@@ -318,80 +277,6 @@ function mapCategoryToInterest(category: NoticeCategory): InterestCategory {
     default:
       return category;
   }
-}
-
-function withWeeklyDemoNotices(sourceNotices: Notice[]): Notice[] {
-  const existingIds = new Set(sourceNotices.map((notice) => notice.id));
-  const demoNotices = getWeeklyDemoNotices().filter(
-    (notice) => !existingIds.has(notice.id)
-  );
-
-  return [...demoNotices, ...sourceNotices].sort((a, b) =>
-    b.date.localeCompare(a.date)
-  );
-}
-
-function getWeeklyDemoNotices(): Notice[] {
-  const { weekEndKey } = getCurrentWeekBoundsForDemo();
-  const dayBeforeWeekEndKey = getDateOffsetKey(weekEndKey, -1);
-
-  return [
-    {
-      id: 'demo-oia-short-term-2026',
-      title: '[국제교류팀] 2026 해외단기파견 프로그램 참가자 모집',
-      category: 'Academic',
-      summary:
-        'OIA 공지 검증용: 아주포털 및 구글폼 지원서를 마감 전 제출해야 합니다.',
-      date: '2026-05-15',
-      deadline: dayBeforeWeekEndKey,
-      isCritical: true,
-      description:
-        '아주대학교 국제협력처 OIA 홈페이지의 2026 하계 3차 해외단기파견 프로그램 모집 공지를 바탕으로 한 이번 주 캘린더/진행률 검증용 일정입니다.',
-      link: 'https://www.ajou.ac.kr/oia/index.do',
-    },
-    {
-      id: 'demo-topik-106th-2026',
-      title: '제106회 한국어능력시험(TOPIK) 시험일 확인',
-      category: 'TOPIK',
-      summary:
-        'TOPIK 공지 검증용: 시험 일정과 수험표/응시 유의사항을 확인하세요.',
-      date: '2026-05-16',
-      deadline: weekEndKey,
-      isCritical: true,
-      description:
-        'TOPIK 접수 시스템의 2026년 시험 일정 확인 흐름을 바탕으로 한 이번 주 캘린더/진행률 검증용 일정입니다.',
-      link: 'https://register.topik.go.kr/main.do',
-    },
-  ];
-}
-
-function getCurrentWeekBoundsForDemo() {
-  const today = new Date();
-  const day = today.getDay();
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diffToMonday);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  return {
-    weekStartKey: formatDateKeyForDemo(monday),
-    weekEndKey: formatDateKeyForDemo(sunday),
-  };
-}
-
-function getDateOffsetKey(dateKey: string, offsetDays: number) {
-  const date = new Date(`${dateKey}T00:00:00`);
-  date.setDate(date.getDate() + offsetDays);
-  return formatDateKeyForDemo(date);
-}
-
-function formatDateKeyForDemo(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-    2,
-    '0'
-  )}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export function useAppContext() {

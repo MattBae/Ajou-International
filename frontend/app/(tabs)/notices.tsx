@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppContext } from '../context/AppContext';
 import { getCategoryLabel, t } from '../i18n';
 import type { NoticeCategory } from '../types';
@@ -115,6 +115,13 @@ export default function NoticesScreen() {
                   <Text style={styles.summary} numberOfLines={3}>
                     {notice.summary}
                   </Text>
+                  {notice.imageUrls?.[0] ? (
+                    <Image
+                      source={{ uri: notice.imageUrls[0] }}
+                      style={styles.noticeImage}
+                      resizeMode="cover"
+                    />
+                  ) : null}
                   <Text style={styles.date}>
                     {notice.deadline
                       ? `${t(selectedLanguage, 'notices.deadline')} ${notice.deadline}`
@@ -262,6 +269,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     lineHeight: 20,
     minHeight: 60,
+  },
+  noticeImage: {
+    width: '100%',
+    height: 156,
+    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+    marginBottom: 10,
   },
   date: {
     fontSize: 12,

@@ -17,6 +17,7 @@ from sqlalchemy import (
     Uuid,
     func,
 )
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
 
@@ -82,6 +83,7 @@ class Notice(Base):
     is_processed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     deadline: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    image_urls: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

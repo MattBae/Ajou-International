@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCategoryLabel, t } from '../i18n';
 import { useAppContext } from '../context/AppContext';
@@ -115,6 +115,22 @@ export default function NoticeDetailScreen() {
         <Text style={styles.sectionTitle}>{selectedLanguage === 'Korean' ? '요약' : 'Summary'}</Text>
         <Text style={styles.sectionText}>{notice.summary}</Text>
       </View>
+
+      {notice.imageUrls?.length ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {selectedLanguage === 'Korean' ? '이미지' : 'Images'}
+          </Text>
+          {notice.imageUrls.map((imageUrl) => (
+            <Image
+              key={imageUrl}
+              source={{ uri: imageUrl }}
+              style={styles.noticeImage}
+              resizeMode="cover"
+            />
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
@@ -269,6 +285,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#475569',
     lineHeight: 26,
+  },
+  noticeImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+    marginBottom: 10,
   },
   linkText: {
     fontSize: 14,
