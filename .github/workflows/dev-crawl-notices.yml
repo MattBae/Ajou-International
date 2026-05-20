@@ -1,4 +1,4 @@
-name: Crawl Ajou Notices (Dev)
+name: Crawl Ajou Notices (NEON_DEV/수동)
 
 on:
   workflow_dispatch:   # 수동 트리거만
