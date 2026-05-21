@@ -25,7 +25,7 @@ from sqlalchemy import create_engine, text
 
 # Allow sibling imports when run as a script
 sys.path.insert(0, str(Path(__file__).parent))
-from msg_templates import TOPIK_TEMPLATES, VISA_TEMPLATES
+from msg_templates import get_topik_msg, get_visa_msg
 
 load_dotenv()
 
@@ -133,7 +133,8 @@ def main() -> None:
                     visa_expiry_date,
                     topik_level,
                     visa_last_notified_at,
-                    topik_last_notified_at
+                    topik_last_notified_at,
+                    preferred_language
                 FROM users
                 WHERE visa_expiry_date IS NOT NULL
                    OR visa_type = 'D-4'
@@ -163,6 +164,7 @@ def main() -> None:
 
             for row in rows:
                 uid = str(row.id)
+                lang = row.preferred_language or "English"
                 visa_risk: int | None = None
                 topik_risk: int | None = None
 
@@ -173,9 +175,7 @@ def main() -> None:
 
                     if FORCE_SEND or _should_send_visa(visa_risk, days_left, row.visa_last_notified_at, today):
                         if (uid, "visa") not in pending_set:
-                            msg = VISA_TEMPLATES[visa_risk]
-                            if visa_risk == 2:
-                                msg = msg.format(days_left=days_left)
+                            msg = get_visa_msg(lang, visa_risk, days_left)
                             outbox_inserts.append({
                                 "user_id": uid,
                                 "payload": json.dumps({
@@ -207,7 +207,7 @@ def main() -> None:
                                 "payload": json.dumps({
                                     "alert_type": "topik",
                                     "risk_level": topik_risk,
-                                    "message": TOPIK_TEMPLATES[topik_risk],
+                                    "message": get_topik_msg(lang, topik_risk),
                                 }),
                             })
 
