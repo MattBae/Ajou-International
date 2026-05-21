@@ -126,7 +126,7 @@ export default function NoticeDetailScreen() {
               key={imageUrl}
               source={{ uri: imageUrl }}
               style={styles.noticeImage}
-              resizeMode="cover"
+              resizeMode="contain"
             />
           ))}
         </View>
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   noticeImage: {
     width: '100%',
-    height: 220,
+    aspectRatio: 3 / 4,
     borderRadius: 10,
     backgroundColor: '#E2E8F0',
     marginBottom: 10,
