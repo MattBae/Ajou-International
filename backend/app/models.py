@@ -11,13 +11,14 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    SmallInteger,
     String,
     Text,
-    UniqueConstraint,
     Uuid,
     func,
+    text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
 
@@ -48,6 +49,11 @@ class User(Base):
     topik_test_plan: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     preferred_language: Mapped[str] = mapped_column(String, default="English", server_default="English")
     residence_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    visa_risk: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    topik_risk: Mapped[Optional[int]] = mapped_column(SmallInteger, nullable=True)
+    visa_last_notified_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    topik_last_notified_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -123,16 +129,25 @@ class AlertOutbox(Base):
     # 알림 발송 대기 큐 테이블 모델
     __tablename__ = "alert_outbox"
     __table_args__ = (
-        UniqueConstraint("user_id", "notice_id", name="uq_alert_outbox_user_notice"),
+        # Partial unique index: enforce uniqueness only for notice-based alerts (notice_id IS NOT NULL).
+        # Risk alerts have notice_id = NULL so they are not subject to this constraint.
+        Index(
+            "ix_alert_outbox_user_notice",
+            "user_id",
+            "notice_id",
+            unique=True,
+            postgresql_where=text("notice_id IS NOT NULL"),
+        ),
         Index("ix_alert_outbox_status_created_at", "status", "created_at"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    notice_id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), ForeignKey("notices.id"), nullable=False)
+    notice_id: Mapped[Optional[Uuid]] = mapped_column(Uuid(as_uuid=True), ForeignKey("notices.id"), nullable=True)
     status: Mapped[str] = mapped_column(String, nullable=False, default="pending", server_default="pending")
     try_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    payload: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
