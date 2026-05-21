@@ -1,4 +1,7 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import { fetchNotices } from '../services/notices';
 import { authService } from '../services/auth';
 import { getToken } from '../services/api';
@@ -37,6 +40,38 @@ const initialUserProfileStatus: UserProfileStatus = {
   residenceType: 'Dormitory',
 };
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+async function registerPushToken(): Promise<void> {
+  if (!Device.isDevice) return;
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  const { status } = existing === 'granted'
+    ? { status: existing }
+    : await Notifications.requestPermissionsAsync();
+
+  if (status !== 'granted') return;
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+    });
+  }
+
+  const { data: token } = await Notifications.getExpoPushTokenAsync();
+  console.log('[PushToken]', token);
+  await authService.updatePushToken(token);
+}
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -63,6 +98,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         const me = await authService.getMe();
+        registerPushToken().catch(e => console.warn('[PushToken] registration failed', e));
         if (me) {
           const profileData: UserProfileStatus = {
             ...initialUserProfileStatus,
