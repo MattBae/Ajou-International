@@ -1,14 +1,15 @@
-name: Risk Notifications (NEON_DEV / Manual)
+name: Risk Notifications (NEON_DEV / Auto)
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"   # 09:00 KST daily (UTC+9)
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   risk-notifications:
-    name: Calculate risks and send alerts (dev, force-send)
+    name: Calculate risks and send alerts (dev, scheduled)
     runs-on: ubuntu-latest
 
     permissions:
@@ -26,10 +27,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r workers/risk_alarm/requirements.txt
 
-      - name: Calculate risk scores and populate outbox (force-send)
+      - name: Calculate risk scores and populate outbox
         env:
           DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
-          FORCE_SEND: "true"
         run: python workers/risk_alarm/expo/update_risk.py
 
       - name: Send risk alerts via Expo

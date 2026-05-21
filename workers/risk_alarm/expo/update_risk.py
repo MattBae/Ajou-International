@@ -1,5 +1,5 @@
 """
-workers/risk/expo/update_risk.py
+workers/risk_alarm/expo/update_risk.py
 
 Calculates visa_risk and topik_risk for all eligible users, then populates
 alert_outbox for users who meet the send-frequency threshold.
@@ -8,6 +8,8 @@ Risk calculation + outbox INSERT run in a single atomic transaction.
 
 Env vars:
   DATABASE_URL  — Neon/PostgreSQL connection string
+  FORCE_SEND    — set to "true" to bypass last_notified_at frequency gates
+                  (useful for manual test runs)
 """
 
 import json
@@ -29,6 +31,9 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
+
+# When True, skip last_notified_at frequency gates and queue alerts for all eligible users.
+FORCE_SEND: bool = os.environ.get("FORCE_SEND", "").lower() in ("1", "true", "yes")
 
 # D-2 visa admission deadline for TOPIK requirement
 D2_DEADLINE = date(2026, 9, 1)
@@ -138,6 +143,9 @@ def main() -> None:
                 log.info("No eligible users found.")
                 return
 
+            if FORCE_SEND:
+                log.info("FORCE_SEND=true — frequency gates are disabled for this run.")
+
             log.info("Evaluating %d user(s).", len(rows))
 
             # Fetch existing pending risk-alert rows to avoid duplicates
@@ -163,7 +171,7 @@ def main() -> None:
                     days_left = (row.visa_expiry_date - today).days
                     visa_risk = calc_visa_risk(days_left)
 
-                    if _should_send_visa(visa_risk, days_left, row.visa_last_notified_at, today):
+                    if FORCE_SEND or _should_send_visa(visa_risk, days_left, row.visa_last_notified_at, today):
                         if (uid, "visa") not in pending_set:
                             msg = VISA_TEMPLATES[visa_risk]
                             if visa_risk == 2:
@@ -192,7 +200,7 @@ def main() -> None:
 
                     topik_risk = calc_topik_risk(topik_level_int, days_to_deadline)
 
-                    if topik_risk > 0 and _should_send_topik(topik_risk, row.topik_last_notified_at, today):
+                    if topik_risk > 0 and (FORCE_SEND or _should_send_topik(topik_risk, row.topik_last_notified_at, today)):
                         if (uid, "topik") not in pending_set:
                             outbox_inserts.append({
                                 "user_id": uid,
