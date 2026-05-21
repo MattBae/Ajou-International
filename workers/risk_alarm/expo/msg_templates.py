@@ -4,7 +4,18 @@ workers/risk_alarm/expo/msg_templates.py
 Push notification message templates for visa and TOPIK risk alerts.
 Keyed by preferred_language ("Korean" | "English").
 VISA_TEMPLATES[lang][2] uses {days_left} — inject via .format(days_left=...) at render time.
+
+Templates are loaded from the Neon DB `risk_msg` table at startup via load_templates(engine).
+If the DB load fails the hardcoded dicts below are used as fallback.
 """
+
+import logging
+
+log = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Hardcoded fallback templates (also the initial seed in the DB)
+# ---------------------------------------------------------------------------
 
 VISA_TEMPLATES: dict[str, dict[int, str]] = {
     "Korean": {
@@ -36,9 +47,56 @@ TOPIK_TEMPLATES: dict[str, dict[int, str]] = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# Module-level cache populated by load_templates()
+# ---------------------------------------------------------------------------
+
+_visa_cache: dict[str, dict[int, str]] = {}
+_topik_cache: dict[str, dict[int, str]] = {}
+_cache_loaded: bool = False
+
+
+def load_templates(engine) -> None:
+    """Fetch risk_msg rows from DB and fill the in-memory cache.
+
+    Safe to call multiple times — subsequent calls are no-ops once loaded.
+    Falls back silently to the hardcoded dicts if the query fails.
+    """
+    global _visa_cache, _topik_cache, _cache_loaded
+    if _cache_loaded:
+        return
+
+    try:
+        from sqlalchemy import text  # type: ignore[import-untyped]
+
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text("SELECT alarm_type, risk_level, lang, message FROM risk_msg")
+            ).fetchall()
+
+        visa: dict[str, dict[int, str]] = {}
+        topik: dict[str, dict[int, str]] = {}
+
+        for alarm_type, risk_level, lang, message in rows:
+            if alarm_type == "visa":
+                visa.setdefault(lang, {})[risk_level] = message
+            elif alarm_type == "topik":
+                topik.setdefault(lang, {})[risk_level] = message
+
+        if visa:
+            _visa_cache = visa
+        if topik:
+            _topik_cache = topik
+
+        _cache_loaded = True
+        log.info("Loaded %d risk_msg template(s) from DB.", len(rows))
+
+    except Exception as exc:
+        log.warning("Could not load risk_msg from DB — using hardcoded fallback. (%s)", exc)
+
 
 def get_visa_msg(lang: str, risk: int, days_left: int | None = None) -> str:
-    templates = VISA_TEMPLATES.get(lang) or VISA_TEMPLATES["English"]
+    templates = (_visa_cache or VISA_TEMPLATES).get(lang) or (_visa_cache or VISA_TEMPLATES)["English"]
     msg = templates[risk]
     if risk == 2 and days_left is not None:
         msg = msg.format(days_left=days_left)
@@ -46,5 +104,5 @@ def get_visa_msg(lang: str, risk: int, days_left: int | None = None) -> str:
 
 
 def get_topik_msg(lang: str, risk: int) -> str:
-    templates = TOPIK_TEMPLATES.get(lang) or TOPIK_TEMPLATES["English"]
+    templates = (_topik_cache or TOPIK_TEMPLATES).get(lang) or (_topik_cache or TOPIK_TEMPLATES)["English"]
     return templates[risk]

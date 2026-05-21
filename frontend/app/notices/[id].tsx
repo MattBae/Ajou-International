@@ -1,8 +1,34 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCategoryLabel, t } from '../i18n';
 import { useAppContext } from '../context/AppContext';
+
+function AutoHeightImage({ uri }: { uri: string }) {
+  const { width: screenWidth } = useWindowDimensions();
+  // content padding(20*2) + section padding(16*2) = 72px
+  const containerWidth = screenWidth - 72;
+  const [imageHeight, setImageHeight] = useState(220);
+
+  return (
+    <Image
+      source={{ uri }}
+      style={{
+        width: '100%',
+        height: imageHeight,
+        borderRadius: 10,
+        backgroundColor: '#E2E8F0',
+        marginBottom: 10,
+      }}
+      resizeMode="contain"
+      onLoad={(e) => {
+        const { width, height } = e.nativeEvent.source;
+        setImageHeight((containerWidth * height) / width);
+      }}
+    />
+  );
+}
 
 export default function NoticeDetailScreen() {
   const router = useRouter();
@@ -122,12 +148,7 @@ export default function NoticeDetailScreen() {
             {selectedLanguage === 'Korean' ? '이미지' : 'Images'}
           </Text>
           {notice.imageUrls.map((imageUrl) => (
-            <Image
-              key={imageUrl}
-              source={{ uri: imageUrl }}
-              style={styles.noticeImage}
-              resizeMode="contain"
-            />
+            <AutoHeightImage key={imageUrl} uri={imageUrl} />
           ))}
         </View>
       ) : null}
@@ -285,13 +306,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#475569',
     lineHeight: 26,
-  },
-  noticeImage: {
-    width: '100%',
-    aspectRatio: 3 / 4,
-    borderRadius: 10,
-    backgroundColor: '#E2E8F0',
-    marginBottom: 10,
   },
   linkText: {
     fontSize: 14,

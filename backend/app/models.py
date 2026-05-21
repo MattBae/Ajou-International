@@ -14,6 +14,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    UniqueConstraint,
     Uuid,
     func,
     text,
@@ -152,3 +153,17 @@ class AlertOutbox(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class RiskMsg(Base):
+    # 리스크 알림 메세지 템플릿 테이블 모델 (alarm_type + risk_level + lang 별 메세지)
+    __tablename__ = "risk_msg"
+    __table_args__ = (
+        UniqueConstraint("alarm_type", "risk_level", "lang", name="uq_risk_msg_type_level_lang"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    alarm_type: Mapped[str] = mapped_column(String(10), nullable=False)   # 'visa' | 'topik'
+    risk_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)  # visa: 1~5, topik: 1~3
+    lang: Mapped[str] = mapped_column(String(10), nullable=False)          # 'Korean' | 'English'
+    message: Mapped[str] = mapped_column(Text, nullable=False)

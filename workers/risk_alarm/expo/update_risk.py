@@ -25,7 +25,7 @@ from sqlalchemy import create_engine, text
 
 # Allow sibling imports when run as a script
 sys.path.insert(0, str(Path(__file__).parent))
-from msg_templates import get_topik_msg, get_visa_msg
+from msg_templates import get_topik_msg, get_visa_msg, load_templates
 
 load_dotenv()
 
@@ -121,6 +121,7 @@ def _should_send_topik(
 
 def main() -> None:
     engine = _get_engine()
+    load_templates(engine)
     today = date.today()
     days_to_deadline = (D2_DEADLINE - today).days
 
