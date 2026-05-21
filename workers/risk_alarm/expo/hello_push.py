@@ -3,11 +3,17 @@ workers/risk_alarm/expo/hello_push.py
 
 모든 유저에게 즉시 테스트 푸시 알림을 발송한다.
 
-실행:
-  DATABASE_URL=... python workers/risk_alarm/expo/hello_push.py
+로컬 실행:
+  1) workers/risk_alarm/.env 파일에 DATABASE_URL 을 설정
+     DATABASE_URL=postgresql://...  (dev: NEON_DEV_DATABASE_URL 값)
+  2) python workers/risk_alarm/expo/hello_push.py
+
+GitHub Actions:
+  dev  브랜치 → secrets.NEON_DEV_DATABASE_URL
+  prod 브랜치 → secrets.NEON_PROD_DATABASE_URL
 
 Env vars:
-  DATABASE_URL       — Neon/PostgreSQL connection string
+  DATABASE_URL       — Neon/PostgreSQL connection string (필수)
   EXPO_ACCESS_TOKEN  — (optional) Expo access token
 """
 
@@ -33,11 +39,10 @@ EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 EXPO_RECEIPTS_URL = "https://exp.host/--/api/v2/push/getReceipts"
 BATCH_SIZE = 100
 MESSAGE = "안녕! 난 AZAN 이야!"
-DATABASE_URL = "postgresql://neondb_owner:npg_FSaP3ckWN9lz@ep-weathered-pond-a17096gl-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+
 
 def main() -> None:
-    # 환경변수 우선, 없으면 모듈 상수 DATABASE_URL 사용
-    url = os.environ.get("DATABASE_URL") or DATABASE_URL
+    url = os.environ.get("DATABASE_URL")
     if not url:
         log.error("DATABASE_URL 이 설정되지 않음")
         sys.exit(1)
