@@ -33,19 +33,11 @@ const LANGUAGE_STATUS_OPTIONS: LanguageInstituteStatus[] = [
   'Enrolled',
   'Completed',
 ];
-const LANGUAGE_TERM_OPTIONS: LanguageInstituteTerm[] = [
-  'Term 1',
-  'Term 2',
-  'Term 3',
-  'Term 4',
-];
-const ADMISSION_TARGET_OPTIONS: AjouAdmissionTarget[] = [
-  'March',
-  'June',
-  'September',
-  'December',
-];
-const VISA_TYPE_OPTIONS: VisaType[] = ['D-4', 'D-2', 'Other', 'Unknown'];
+const LANGUAGE_TERM_YEAR_OPTIONS: LanguageInstituteTerm[] = getLanguageTermYearOptions();
+const ADMISSION_YEAR_OPTIONS: AjouAdmissionTarget[] = getAdmissionYearOptions();
+const ADMISSION_MONTH_OPTIONS = ['03', '06', '09', '12'] as const;
+type AdmissionMonth = (typeof ADMISSION_MONTH_OPTIONS)[number];
+const VISA_TYPE_OPTIONS: VisaType[] = ['D-4', 'D-2', 'Other'];
 const TOPIK_STATUS_OPTIONS: TopikStatus[] = ['None', 'Passed'];
 const TOPIK_LEVEL_OPTIONS: TopikLevel[] = [
   'Level 1',
@@ -75,7 +67,14 @@ const LANGUAGE_OPTIONS: LanguageOption[] = ['Korean', 'English'];
 const RESIDENCE_OPTIONS: ResidenceType[] = ['Dormitory', 'Off-campus'];
 const WEEK_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-type DropdownKey = 'currentTopik' | 'targetTopik' | null;
+type DropdownKey =
+  | 'admissionYear'
+  | 'admissionMonth'
+  | 'languageTermYear'
+  | 'languageTermMonth'
+  | 'currentTopik'
+  | 'targetTopik'
+  | null;
 
 export default function ProfileScreen() {
   const {
@@ -115,9 +114,6 @@ export default function ProfileScreen() {
     setForm((prev) => ({
       ...prev,
       [key]: value,
-      ...(key === 'visaExpiryUnknown' && value === true
-        ? { visaExpiryDate: '' }
-        : {}),
       ...(key === 'topikStatus' && value === 'None'
         ? { topikLevel: 'Level 1' as TopikLevel }
         : {}),
@@ -128,7 +124,6 @@ export default function ProfileScreen() {
     setForm((prev) => ({
       ...prev,
       visaExpiryDate: formatDateKey(date),
-      visaExpiryUnknown: false,
     }));
   };
 
@@ -154,6 +149,11 @@ export default function ProfileScreen() {
   };
 
   const handleSave = async () => {
+    if (!form.visaExpiryDate.trim()) {
+      Alert.alert('입력 오류', '비자 만료일을 선택해주세요.');
+      return;
+    }
+
     try {
       await authService.updateMe(form);
       setUserProfileStatus(form);
@@ -218,23 +218,101 @@ export default function ProfileScreen() {
           />
 
           {shouldShowLanguageTerm ? (
-            <OptionField
-              label="현재 어학당 학기"
-              options={LANGUAGE_TERM_OPTIONS}
-              selectedValue={form.languageInstituteTerm}
-              onSelect={(value) => updateField('languageInstituteTerm', value)}
-              getLabel={getLanguageInstituteTermLabel}
-            />
+            <>
+              <DropdownField
+                label="현재 한국어과정 연도"
+                value={parseLanguageInstituteTerm(form.languageInstituteTerm).year}
+                options={LANGUAGE_TERM_YEAR_OPTIONS}
+                open={openDropdown === 'languageTermYear'}
+                onToggle={() =>
+                  setOpenDropdown((prev) =>
+                    prev === 'languageTermYear' ? null : 'languageTermYear'
+                  )
+                }
+                onSelect={(value) => {
+                  const nextValue = formatLanguageTerm(
+                    value,
+                    parseLanguageInstituteTerm(form.languageInstituteTerm).month
+                  );
+                  updateField('languageInstituteTerm', nextValue);
+                  updateField('languageSchoolSemester', nextValue);
+                  setOpenDropdown(null);
+                }}
+                getLabel={(value) => value}
+              />
+
+              <DropdownField
+                label="현재 한국어과정 월"
+                value={parseLanguageInstituteTerm(form.languageInstituteTerm).month}
+                options={[...ADMISSION_MONTH_OPTIONS]}
+                open={openDropdown === 'languageTermMonth'}
+                onToggle={() =>
+                  setOpenDropdown((prev) =>
+                    prev === 'languageTermMonth' ? null : 'languageTermMonth'
+                  )
+                }
+                onSelect={(value) => {
+                  const nextValue = formatLanguageTerm(
+                    parseLanguageInstituteTerm(form.languageInstituteTerm).year,
+                    value
+                  );
+                  updateField('languageInstituteTerm', nextValue);
+                  updateField('languageSchoolSemester', nextValue);
+                  setOpenDropdown(null);
+                }}
+                getLabel={getAdmissionMonthLabel}
+              />
+            </>
           ) : null}
 
           {shouldShowAdmissionTarget ? (
-            <OptionField
-              label="아주대 입학 목표 시기"
-              options={ADMISSION_TARGET_OPTIONS}
-              selectedValue={form.targetAdmissionTerm}
-              onSelect={(value) => updateField('targetAdmissionTerm', value)}
-              getLabel={getAdmissionTargetLabel}
-            />
+            <>
+              <DropdownField
+                label="아주대 입학 목표 연도"
+                value={parseAdmissionTerm(form.targetAdmissionTerm).year}
+                options={ADMISSION_YEAR_OPTIONS}
+                open={openDropdown === 'admissionYear'}
+                onToggle={() =>
+                  setOpenDropdown((prev) =>
+                    prev === 'admissionYear' ? null : 'admissionYear'
+                  )
+                }
+                onSelect={(value) => {
+                  updateField(
+                    'targetAdmissionTerm',
+                    formatAdmissionTerm(
+                      value,
+                      parseAdmissionTerm(form.targetAdmissionTerm).month
+                    )
+                  );
+                  setOpenDropdown(null);
+                }}
+                getLabel={(value) => value}
+              />
+
+              <DropdownField
+                label="아주대 입학 목표 월"
+                value={parseAdmissionTerm(form.targetAdmissionTerm).month}
+                options={[...ADMISSION_MONTH_OPTIONS]}
+                open={openDropdown === 'admissionMonth'}
+                onToggle={() =>
+                  setOpenDropdown((prev) =>
+                    prev === 'admissionMonth' ? null : 'admissionMonth'
+                  )
+                }
+                onSelect={(value) => {
+                  updateField(
+                    'targetAdmissionTerm',
+                    formatAdmissionTerm(
+                      parseAdmissionTerm(form.targetAdmissionTerm).year,
+                      value
+                    )
+                  );
+                  setOpenDropdown(null);
+                }}
+                getLabel={getAdmissionMonthLabel}
+              />
+            </>
           ) : null}
 
           <ProfileInput
@@ -282,35 +360,12 @@ export default function ProfileScreen() {
                     !form.visaExpiryDate && styles.dateInputPlaceholder,
                   ]}
                 >
-                  {form.visaExpiryUnknown
-                    ? '모름'
-                    : form.visaExpiryDate || '날짜 선택'}
+                  {form.visaExpiryDate || '날짜 선택'}
                 </Text>
               </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.unknownButton,
-                  form.visaExpiryUnknown && styles.unknownButtonSelected,
-                ]}
-                onPress={() =>
-                  updateField('visaExpiryUnknown', !form.visaExpiryUnknown)
-                }
-                activeOpacity={0.85}
-              >
-                <Text
-                  style={[
-                    styles.unknownButtonText,
-                    form.visaExpiryUnknown && styles.unknownButtonTextSelected,
-                  ]}
-                >
-                  모름
-                </Text>
-              </TouchableOpacity>
             </View>
 
-            {!form.visaExpiryUnknown ? (
-              <View style={styles.calendarCard}>
+            <View style={styles.calendarCard}>
                 <View style={styles.calendarHeader}>
                   <TouchableOpacity
                     style={styles.calendarArrow}
@@ -373,8 +428,7 @@ export default function ProfileScreen() {
                     );
                   })}
                 </View>
-              </View>
-            ) : null}
+            </View>
           </View>
 
           <OptionField
@@ -732,30 +786,79 @@ function getLanguageInstituteStatusLabel(value: LanguageInstituteStatus) {
   }
 }
 
-function getLanguageInstituteTermLabel(value: LanguageInstituteTerm) {
+function getAdmissionYearOptions() {
+  const startYear = new Date().getFullYear();
+  return Array.from({ length: 6 }, (_, index) => String(startYear + index));
+}
+
+function getLanguageTermYearOptions() {
+  const endYear = Math.max(new Date().getFullYear() + 5, 2029);
+  return Array.from(
+    { length: endYear - 2024 + 1 },
+    (_, index) => String(2024 + index)
+  );
+}
+
+function parseAdmissionTerm(value: AjouAdmissionTarget): {
+  year: string;
+  month: AdmissionMonth;
+} {
+  const currentYear = String(new Date().getFullYear());
+  const match = value.match(/^(\d{4})\.(03|06|09|12)$/);
+
+  if (match) {
+    return { year: match[1], month: match[2] as AdmissionMonth };
+  }
+
   switch (value) {
-    case 'Term 1':
-      return '1학기';
-    case 'Term 2':
-      return '2학기';
-    case 'Term 3':
-      return '3학기';
-    case 'Term 4':
-      return '4학기';
+    case 'March':
+      return { year: currentYear, month: '03' };
+    case 'June':
+      return { year: currentYear, month: '06' };
+    case 'September':
+      return { year: currentYear, month: '09' };
+    case 'December':
+      return { year: currentYear, month: '12' };
+    default:
+      return { year: currentYear, month: '09' };
   }
 }
 
-function getAdmissionTargetLabel(value: AjouAdmissionTarget) {
-  switch (value) {
-    case 'March':
-      return '3월 (봄학기)';
-    case 'June':
-      return '6월 (여름학기)';
-    case 'September':
-      return '9월 (가을학기)';
-    case 'December':
-      return '12월 (겨울학기)';
+function formatAdmissionTerm(year: string, month: AdmissionMonth) {
+  return `${year}.${month}`;
+}
+
+function parseLanguageInstituteTerm(value: LanguageInstituteTerm): {
+  year: string;
+  month: AdmissionMonth;
+} {
+  const currentYear = String(new Date().getFullYear());
+  const match = value.match(/^(\d{4})\.(03|06|09|12)(?:\.\d{2})?$/);
+
+  if (match) {
+    return { year: match[1], month: match[2] as AdmissionMonth };
   }
+
+  switch (value) {
+    case 'Term 1':
+      return { year: currentYear, month: '03' };
+    case 'Term 2':
+      return { year: currentYear, month: '06' };
+    case 'Term 3':
+      return { year: currentYear, month: '09' };
+    case 'Term 4':
+      return { year: currentYear, month: '12' };
+    default:
+      return { year: currentYear, month: '03' };
+  }
+}
+
+function formatLanguageTerm(year: string, month: AdmissionMonth) {
+  return `${year}.${month}`;
+}
+
+function getAdmissionMonthLabel(value: AdmissionMonth) {
+  return `${Number(value)}월`;
 }
 
 function getVisaTypeLabel(value: VisaType) {
@@ -766,8 +869,6 @@ function getVisaTypeLabel(value: VisaType) {
       return 'D-2 (유학)';
     case 'Other':
       return '기타';
-    case 'Unknown':
-      return '잘 모르겠어요';
   }
 }
 
@@ -943,27 +1044,6 @@ const styles = StyleSheet.create({
   },
   dateInputPlaceholder: {
     color: '#94A3B8',
-  },
-  unknownButton: {
-    height: 48,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  unknownButtonSelected: {
-    backgroundColor: '#E0F7FF',
-    borderWidth: 1,
-    borderColor: '#38BDF8',
-  },
-  unknownButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  unknownButtonTextSelected: {
-    color: '#005BAC',
   },
   calendarCard: {
     marginTop: 14,

@@ -22,6 +22,7 @@ from .routers.auth import router as auth_router
 from .routers.keywords import router as keywords_router
 from .routers.notices import router as notices_router
 from .routers.chatbot import router as chatbot_router
+from .routers.information_menu import router as information_menu_router
 
 logger = logging.getLogger("azan.main")
 logging.basicConfig(
@@ -88,6 +89,7 @@ app.include_router(auth_router)
 app.include_router(keywords_router)
 app.include_router(notices_router)
 app.include_router(chatbot_router)
+app.include_router(information_menu_router)
 
 
 if __name__ == "__main__":

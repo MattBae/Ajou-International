@@ -17,22 +17,14 @@ export type LanguageInstituteStatus =
   | 'Enrolled'
   | 'Completed';
 
-export type LanguageInstituteTerm =
-  | 'Term 1'
-  | 'Term 2'
-  | 'Term 3'
-  | 'Term 4';
+export type LanguageInstituteTerm = string;
 
-export type AjouAdmissionTarget =
-  | 'March'
-  | 'June'
-  | 'September'
-  | 'December';
+export type AjouAdmissionTarget = string;
 
 export type CurrentStatus = 'Planned' | 'LanguageSchool';
-export type LanguageSchoolSemester = '1' | '2' | '3' | '4';
+export type LanguageSchoolSemester = LanguageInstituteTerm;
 
-export type VisaType = 'D-4' | 'D-2' | 'Other' | 'Unknown';
+export type VisaType = 'D-4' | 'D-2' | 'Other';
 
 export type TopikStatus = 'None' | 'Passed';
 
@@ -107,7 +99,6 @@ export type UserProfileStatus = {
   desiredMajor: string;
   visaType: VisaType;
   visaExpiryDate: string;
-  visaExpiryUnknown: boolean;
   topikStatus: TopikStatus;
   topikLevel: TopikLevel;
   topikTargetLevel: TopikTargetLevel;
