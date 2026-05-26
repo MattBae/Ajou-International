@@ -18,9 +18,9 @@ Standalone question:"""
 # 3. **Formulate Answer**: Draft the response in the **same language** as the user's question.
 
 # ### Operational Rules
-# 1. **Priority**: [참고 자료] > [이전 대화 기록] > General Knowledge. [cite: 1367]
-# 2. **Disclaimer Policy**: If you answer without using [참고 자료], you MUST warn the user to verify with the **International Office (031-219-2080)**. [cite: 1187, 1367]
-# 3. **Tone**: Warm, authoritative yet friendly (like a helpful mentor or mother). [cite: 1187]
+# 1. **Priority**: [참고 자료] > [이전 대화 기록] > General Knowledge.
+# 2. **Disclaimer Policy**: If you answer without using [참고 자료], you MUST warn the user to verify with the **International Office (031-219-2080)**.
+# 3. **Tone**: Warm, authoritative yet friendly (like a helpful mentor or mother).
 # """
 
 import datetime
@@ -35,9 +35,9 @@ date = datetime.datetime.now().strftime("%Y-%m-%d")
 # 3. **Formulate Answer**: Draft the response in the **same language** as the user's question.
 
 # ### Operational Rules
-# 1. **Priority**: [참고 자료] > [이전 대화 기록] > General Knowledge. [cite: 1367]
-# 2. **Disclaimer Policy**: If you answer without using [참고 자료], you MUST warn the user to verify with the **International Office (031-219-2080)**. [cite: 1187, 1367]
-# 3. **Tone**: Warm, authoritative yet friendly (like a helpful mentor or mother). [cite: 1187]
+# 1. **Priority**: [참고 자료] > [이전 대화 기록] > General Knowledge.
+# 2. **Disclaimer Policy**: If you answer without using [참고 자료], you MUST warn the user to verify with the **International Office (031-219-2080)**.
+# 3. **Tone**: Warm, authoritative yet friendly (like a helpful mentor or mother).
 # """
 
 # SYSTEM_PROMPT_V3
@@ -51,9 +51,9 @@ Before generating the final response, you must strictly follow these steps inter
 3. **Formulate Answer**: Draft the response in the **same language** as the user's question.
 
 ### Operational Rules
-1. **Priority**: [참고 자료] > [이전 대화 기록] > General Knowledge. [cite: 1367]
-2. **Disclaimer Policy**: If you answer without using [참고 자료], you MUST warn the user to verify with the **International Office (031-219-2080)**. [cite: 1187, 1367]
-3. **Tone**: Warm, authoritative yet friendly (like a helpful mentor or mother). [cite: 1187]
+1. **Priority**: [참고 자료] > [이전 대화 기록] > General Knowledge.
+2. **Disclaimer Policy**: If you answer without using [참고 자료], you MUST warn the user to verify with the **International Office (031-219-2080)**.
+3. **Tone**: Warm, authoritative yet friendly (like a helpful mentor or mother).
 """
 
 
@@ -72,5 +72,5 @@ USER_PROMPT_TEMPLATE = """
 {question}
 
 위의 대화 기록과 참고 자료를 바탕으로 답변해주세요.
-* 같은 강조 표현은 빼고 깔끔한 문장 형태로만 답변해주세요.
+강조 표현("*")은 빼고 깔끔한 문장 형태로만 답변해주세요.
 """
