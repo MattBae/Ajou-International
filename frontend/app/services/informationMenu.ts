@@ -1,5 +1,12 @@
 import { apiRequest } from './api';
-import type { InformationMenuPart } from '../data/informationMenuContent';
+
+export type InformationMenuPart = {
+  menuKey: 'visa' | 'topik' | 'register' | 'scholarship' | 'life';
+  menuTitle: string;
+  partKey: string;
+  content: string;
+  sourceUrl?: string;
+};
 
 export type InformationMenuEmbeddingRow = InformationMenuPart & {
   embedding: number[];
@@ -28,13 +35,13 @@ function assertRowsHaveEmbeddings(rows: InformationMenuEmbeddingRow[]) {
   for (const row of rows) {
     if (!Array.isArray(row.embedding) || row.embedding.length === 0) {
       throw new Error(
-        `Missing embedding vector for ${row.menuKey}/${row.partKey}/${row.sectionTitle}`
+        `Missing embedding vector for ${row.menuKey}/${row.partKey}`
       );
     }
 
     if (!row.embeddingModel.trim()) {
       throw new Error(
-        `Missing embedding model for ${row.menuKey}/${row.partKey}/${row.sectionTitle}`
+        `Missing embedding model for ${row.menuKey}/${row.partKey}`
       );
     }
   }

@@ -12,7 +12,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest --verbose --color",
-    "sync:notices": "node ./scripts/sync-crawler-notices.js"
+    "sync:notices": "node ./scripts/sync-crawler-notices.js",
+    "sync:information-menu": "node ./scripts/sync-information-menu-parts.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

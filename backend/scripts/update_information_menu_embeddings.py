@@ -23,8 +23,7 @@ def embedding_text(row: InformationMenuPart) -> str:
     return "\n".join(
         [
             f"메뉴: {row.menu_title}",
-            f"파트: {row.part_title}",
-            f"섹션: {row.section_title}",
+            f"파트: {row.part_key}",
             f"내용: {row.content}",
             f"링크: {row.source_url or ''}",
         ]
@@ -41,7 +40,6 @@ def main() -> None:
                 select(InformationMenuPart).order_by(
                     InformationMenuPart.menu_key,
                     InformationMenuPart.part_key,
-                    InformationMenuPart.section_title,
                 )
             )
             .scalars()
@@ -60,7 +58,7 @@ def main() -> None:
             if len(vector) != EMBEDDING_DIMENSIONS:
                 raise RuntimeError(
                     f"Expected {EMBEDDING_DIMENSIONS} dimensions, got {len(vector)} "
-                    f"for {row.menu_key}/{row.part_key}/{row.section_title}"
+                    f"for {row.menu_key}/{row.part_key}"
                 )
             row.embedding = vector
             row.embedding_model = embedding_model

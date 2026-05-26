@@ -161,8 +161,7 @@ class InformationMenuPart(Base):
         UniqueConstraint(
             "menu_key",
             "part_key",
-            "section_title",
-            name="uq_information_menu_parts_menu_part_section",
+            name="uq_information_menu_parts_menu_part",
         ),
         Index("ix_information_menu_parts_menu_part", "menu_key", "part_key"),
         Index(
@@ -177,8 +176,6 @@ class InformationMenuPart(Base):
     menu_key: Mapped[str] = mapped_column(String, nullable=False)
     menu_title: Mapped[str] = mapped_column(String, nullable=False)
     part_key: Mapped[str] = mapped_column(String, nullable=False)
-    part_title: Mapped[str] = mapped_column(String, nullable=False)
-    section_title: Mapped[str] = mapped_column(String, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     source_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     embedding: Mapped[list] = mapped_column(Vector(1536), nullable=False)

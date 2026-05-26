@@ -21,8 +21,6 @@ class InformationMenuEmbeddingRow(BaseModel):
     menuKey: str
     menuTitle: str
     partKey: str
-    partTitle: str
-    sectionTitle: str
     content: str
     sourceUrl: Optional[str] = None
     embedding: list[float]
@@ -37,8 +35,6 @@ class InformationMenuPartRow(BaseModel):
     menuKey: str
     menuTitle: str
     partKey: str
-    partTitle: str
-    sectionTitle: str
     content: str
     sourceUrl: Optional[str] = None
 
@@ -61,21 +57,20 @@ def create_information_menu_parts_with_embeddings(
 
     for row in body.rows:
         _validate_part_row(row)
-        embedding_text = _embedding_text(row)
         try:
             embedding = embedder.embed_query(
-                text=embedding_text,
+                text=_embedding_text(row),
                 output_dimensionality=EMBEDDING_DIMENSIONS,
             )
         except Exception as exc:
             raise HTTPException(
                 status_code=502,
-                detail=f"Failed to generate embedding for {row.menuKey}/{row.partKey}/{row.sectionTitle}: {exc}",
+                detail=f"Failed to generate embedding for {row.menuKey}/{row.partKey}: {exc}",
             ) from exc
 
         rows.append(
             InformationMenuEmbeddingRow(
-                **row.dict(),
+                **row.model_dump(),
                 embedding=embedding,
                 embeddingModel=embedding_model,
             )
@@ -104,8 +99,6 @@ def _upsert_embedding_rows(rows: list[InformationMenuEmbeddingRow], db: Session)
                 "menu_key": row.menuKey,
                 "menu_title": row.menuTitle.strip(),
                 "part_key": row.partKey,
-                "part_title": row.partTitle.strip(),
-                "section_title": row.sectionTitle.strip(),
                 "content": row.content.strip(),
                 "source_url": row.sourceUrl,
                 "embedding": row.embedding,
@@ -114,17 +107,15 @@ def _upsert_embedding_rows(rows: list[InformationMenuEmbeddingRow], db: Session)
         )
 
     stmt = pg_insert(InformationMenuPart).values(values)
-    update_columns = {
-        "menu_title": stmt.excluded.menu_title,
-        "part_title": stmt.excluded.part_title,
-        "content": stmt.excluded.content,
-        "source_url": stmt.excluded.source_url,
-        "embedding": stmt.excluded.embedding,
-        "embedding_model": stmt.excluded.embedding_model,
-    }
     stmt = stmt.on_conflict_do_update(
-        index_elements=["menu_key", "part_key", "section_title"],
-        set_=update_columns,
+        index_elements=["menu_key", "part_key"],
+        set_={
+            "menu_title": stmt.excluded.menu_title,
+            "content": stmt.excluded.content,
+            "source_url": stmt.excluded.source_url,
+            "embedding": stmt.excluded.embedding,
+            "embedding_model": stmt.excluded.embedding_model,
+        },
     )
 
     result = db.execute(stmt)
@@ -140,7 +131,6 @@ def list_information_menu_parts(db: Session = Depends(get_db)):
         .order_by(
             InformationMenuPart.menu_key,
             InformationMenuPart.part_key,
-            InformationMenuPart.section_title,
         )
         .all()
     )
@@ -152,8 +142,6 @@ def list_information_menu_parts(db: Session = Depends(get_db)):
                 "menuKey": row.menu_key,
                 "menuTitle": row.menu_title,
                 "partKey": row.part_key,
-                "partTitle": row.part_title,
-                "sectionTitle": row.section_title,
                 "content": row.content,
                 "sourceUrl": row.source_url,
                 "embeddingModel": row.embedding_model,
@@ -173,7 +161,7 @@ def _validate_row(row: InformationMenuEmbeddingRow) -> None:
     if not row.embedding:
         raise HTTPException(
             status_code=422,
-            detail=f"embedding is required for {row.menuKey}/{row.partKey}/{row.sectionTitle}",
+            detail=f"embedding is required for {row.menuKey}/{row.partKey}",
         )
 
     if len(row.embedding) != EMBEDDING_DIMENSIONS:
@@ -181,7 +169,7 @@ def _validate_row(row: InformationMenuEmbeddingRow) -> None:
             status_code=422,
             detail=(
                 f"embedding must be {EMBEDDING_DIMENSIONS} dimensions for "
-                f"{row.menuKey}/{row.partKey}/{row.sectionTitle}"
+                f"{row.menuKey}/{row.partKey}"
             ),
         )
 
@@ -196,8 +184,6 @@ def _validate_part_row(row: InformationMenuPartRow) -> None:
     required_text = {
         "menuTitle": row.menuTitle,
         "partKey": row.partKey,
-        "partTitle": row.partTitle,
-        "sectionTitle": row.sectionTitle,
         "content": row.content,
     }
     for field, value in required_text.items():
@@ -209,8 +195,7 @@ def _embedding_text(row: InformationMenuPartRow) -> str:
     return "\n".join(
         [
             f"메뉴: {row.menuTitle}",
-            f"파트: {row.partTitle}",
-            f"섹션: {row.sectionTitle}",
+            f"파트: {row.partKey}",
             f"내용: {row.content}",
             f"링크: {row.sourceUrl or ''}",
         ]
