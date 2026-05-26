@@ -52,7 +52,7 @@ class Config:
     GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemini-2.5-flash")
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
     TEMPERATURE = 0.3
-    RETRIEVER_TOP_K = 3
+    RETRIEVER_TOP_K = 5
 
     # DB: 백엔드와 동일한 DATABASE_URL 사용
     @property

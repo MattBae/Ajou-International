@@ -59,7 +59,7 @@ class AzanChatbotService:
             source_type = meta.get("source_type", "N/A")
             title = meta.get("title", "No Title")
             deadline = meta.get("deadline_at") or meta.get("deadline") or "N/A"
-            content = doc.page_content.replace("\n", " ")[:200]
+            content = doc.page_content.replace("\n", " ")
 
             row = f"| {source_type} | {title} | {deadline} | {content}... |\n"
             toon_text += row
