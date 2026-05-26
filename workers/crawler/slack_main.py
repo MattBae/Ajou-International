@@ -30,6 +30,7 @@ _WORKERS_DIR = Path(__file__).resolve().parents[1]
 if str(_WORKERS_DIR) not in sys.path:
     sys.path.insert(0, str(_WORKERS_DIR))
 
+import argparse
 import logging
 import os
 
@@ -61,6 +62,16 @@ def main() -> None:
     Output: 없음 (부수 효과: DB 행 삽입, stdout 요약 출력)
     Raises: SystemExit(1) — 환경변수 누락 또는 처리 중 예외 발생
     """
+    arg_parser = argparse.ArgumentParser(description="Slack 공지 크롤러")
+    arg_parser.add_argument(
+        "--lookback",
+        type=int,
+        default=170,
+        metavar="HOURS",
+        help="조회 기간(시간). 기본값 170 (7일 + 버퍼). 전체 크롤: 99999",
+    )
+    args = arg_parser.parse_args()
+
     missing = [v for v in _REQUIRED_VARS if not os.environ.get(v)]
     if missing:
         print(
@@ -72,8 +83,8 @@ def main() -> None:
     channel_id: str = os.environ["SLACK_CHANNEL_ID"]
 
     try:
-        logger.info("Slack 채널 %s 크롤 시작 (lookback=25h)", channel_id)
-        notices = fetch_notices(channel_id, lookback_hours=25)
+        logger.info("Slack 채널 %s 크롤 시작 (lookback=%dh)", channel_id, args.lookback)
+        notices = fetch_notices(channel_id, lookback_hours=args.lookback)
         logger.info("메시지 %d건 수집 완료", len(notices))
 
         inserted = 0
