@@ -1,5 +1,6 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
+import Constants from 'expo-constants';
 import { AppProvider, useAppContext } from './context/AppContext';
 
 function RootLayoutNav() {
@@ -41,6 +42,27 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    if (Constants.appOwnership === 'expo') return;
+
+    async function configureNotifications() {
+      const Notifications = await import('expo-notifications');
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    }
+
+    configureNotifications().catch((error) => {
+      console.warn('[Notifications] handler setup skipped', error);
+    });
+  }, []);
+
   return (
     <AppProvider>
       <RootLayoutNav />

@@ -14,6 +14,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    UniqueConstraint,
     Uuid,
     func,
     text,
@@ -152,3 +153,53 @@ class AlertOutbox(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class InformationMenuPart(Base):
+    __tablename__ = "information_menu_parts"
+    __table_args__ = (
+        UniqueConstraint(
+            "menu_key",
+            "part_key",
+            name="uq_information_menu_parts_menu_part",
+        ),
+        Index("ix_information_menu_parts_menu_part", "menu_key", "part_key"),
+        Index(
+            "ix_information_menu_parts_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
+
+    id: Mapped[Uuid] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    menu_key: Mapped[str] = mapped_column(String, nullable=False)
+    menu_title: Mapped[str] = mapped_column(String, nullable=False)
+    part_key: Mapped[str] = mapped_column(String, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    source_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    embedding: Mapped[list] = mapped_column(Vector(1536), nullable=False)
+    embedding_model: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+class RiskMsg(Base):
+    # 리스크 알림 메세지 템플릿 테이블 모델 (alarm_type + risk_level + lang 별 메세지)
+    __tablename__ = "risk_msg"
+    __table_args__ = (
+        UniqueConstraint("alarm_type", "risk_level", "lang", name="uq_risk_msg_type_level_lang"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    alarm_type: Mapped[str] = mapped_column(String(10), nullable=False)   # 'visa' | 'topik'
+    risk_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)  # visa: 1~5, topik: 1~3
+    lang: Mapped[str] = mapped_column(String(10), nullable=False)          # 'Korean' | 'English'
+    message: Mapped[str] = mapped_column(Text, nullable=False)

@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { authService } from '../services/auth';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, registerPushToken } from '../context/AppContext';
 import { t } from '../i18n';
 import type { LanguageOption } from '../types';
 
@@ -58,6 +58,7 @@ export default function SignupScreen() {
     try {
       await authService.register(email, email, password);
       await authService.login(email, password);
+      registerPushToken().catch(e => console.warn('[PushToken] registration failed', e));
       router.replace('/auth/profile');
     } catch (error: any) {
       Alert.alert(

@@ -52,19 +52,53 @@ class VectorStore:
             logger.error("커넥션 반납 실패: %s", e)
 
     def similarity_search(self, query: str, k: int = 3) -> List[Document]:
-        """질문과 유사한 공지 검색. 커넥션 풀 사용."""
+        """질문과 유사한 공지 및 정보 메뉴 검색. 커넥션 풀 사용."""
         conn = self.get_connection()
         cursor = conn.cursor()
         try:
             query_embedding = self.embeddings.embed_query(text=query, output_dimensionality=1536)
+            
+            # notices 테이블과 information_menu_parts 테이블 통합 검색
             search_query = """
-                SELECT title, body, url, deadline, 1 - (embedding <=> %s::vector) AS similarity
-                FROM notices
-                WHERE embedding IS NOT NULL
-                ORDER BY embedding <=> %s::vector
+                WITH notice_search AS (
+                    SELECT 
+                        title, 
+                        body AS content, 
+                        url AS source_url, 
+                        deadline, 
+                        'Notice' AS source_type,
+                        1 - (embedding <=> %s::vector) AS similarity
+                    FROM notices
+                    WHERE embedding IS NOT NULL
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                ),
+                info_search AS (
+                    SELECT 
+                        menu_title || ' > ' || part_key AS title, 
+                        content, 
+                        source_url, 
+                        NULL::date AS deadline, 
+                        'Information' AS source_type,
+                        1 - (embedding <=> %s::vector) AS similarity
+                    FROM information_menu_parts
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                )
+                SELECT title, content, source_url, deadline, source_type, similarity
+                FROM (
+                    SELECT * FROM notice_search
+                    UNION ALL
+                    SELECT * FROM info_search
+                ) AS combined
+                ORDER BY similarity DESC
                 LIMIT %s;
             """
-            cursor.execute(search_query, (query_embedding, query_embedding, k))
+            cursor.execute(search_query, (
+                query_embedding, query_embedding, k,
+                query_embedding, query_embedding, k,
+                k
+            ))
             rows = cursor.fetchall()
             return [
                 Document(
@@ -75,7 +109,8 @@ class VectorStore:
                         "url": row[2],
                         "deadline": row[3],
                         "deadline_at": row[3],
-                        "score": row[4],
+                        "source_type": row[4],
+                        "score": row[5],
                     },
                 )
                 for row in rows

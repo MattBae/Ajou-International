@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { NoticeImage } from '../components/notices/NoticeImage';
 import { useAppContext } from '../context/AppContext';
 import { getCategoryLabel, t } from '../i18n';
 import type { NoticeCategory } from '../types';
@@ -116,10 +117,11 @@ export default function NoticesScreen() {
                     {notice.summary}
                   </Text>
                   {notice.imageUrls?.[0] ? (
-                    <Image
-                      source={{ uri: notice.imageUrls[0] }}
+                    <NoticeImage
+                      uri={notice.imageUrls[0]}
                       style={styles.noticeImage}
-                      resizeMode="cover"
+                      fallbackHeight={156}
+                      maxHeight={320}
                     />
                   ) : null}
                   <Text style={styles.date}>
@@ -272,9 +274,7 @@ const styles = StyleSheet.create({
   },
   noticeImage: {
     width: '100%',
-    height: 156,
     borderRadius: 10,
-    backgroundColor: '#E2E8F0',
     marginBottom: 10,
   },
   date: {
