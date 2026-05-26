@@ -49,18 +49,19 @@ class AzanChatbotService:
         검색된 문서들을 LLM이 이해하기 쉬운 Table(TOON) 형식으로 변환
         """
         if not docs:
-            return "관련된 공지사항 정보가 없습니다."
+            return "관련된 정보가 없습니다."
 
-        toon_text = "| Title | Deadline | Content Summary |\n"
-        toon_text += "|---|---|---|\n"
+        toon_text = "| Type | Title | Deadline | Content Summary |\n"
+        toon_text += "|---|---|---|---|\n"
 
         for doc in docs:
             meta = doc.metadata
+            source_type = meta.get("source_type", "N/A")
             title = meta.get("title", "No Title")
-            deadline = meta.get("deadline_at", "N/A")
+            deadline = meta.get("deadline_at") or meta.get("deadline") or "N/A"
             content = doc.page_content.replace("\n", " ")[:200]
 
-            row = f"| {title} | {deadline} | {content}... |\n"
+            row = f"| {source_type} | {title} | {deadline} | {content}... |\n"
             toon_text += row
 
         return toon_text
