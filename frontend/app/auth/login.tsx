@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { authService } from '../services/auth';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, registerPushToken } from '../context/AppContext';
 import { t } from '../i18n';
 import type { LanguageOption } from '../types';
 
@@ -56,6 +56,8 @@ export default function LoginScreen() {
           preferredLanguage: (me as any).preferred_language || prev.preferredLanguage,
         }));
       }
+
+      registerPushToken().catch(e => console.warn('[PushToken] registration failed', e));
 
       router.replace('/(tabs)');
     } catch (error: any) {

@@ -38,9 +38,7 @@ const initialUserProfileStatus: UserProfileStatus = {
   residenceType: 'Dormitory',
 };
 
-async function registerPushToken(): Promise<void> {
-  if (Constants.appOwnership === 'expo') return;
-
+export async function registerPushToken(): Promise<void> {
   const Device = await import('expo-device');
   const Notifications = await import('expo-notifications');
 
