@@ -41,8 +41,7 @@ def load_topic_detail_rows() -> list[dict]:
 def embedding_text(row: dict) -> str:
     return "\n".join(
         [
-            f"메뉴: {row['menuTitle']}",
-            f"파트: {row['partKey']}",
+            f"주제: {row['menuTitle']}",
             f"내용: {row['content']}",
         ]
     )

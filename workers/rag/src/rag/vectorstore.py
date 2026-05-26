@@ -75,7 +75,7 @@ class VectorStore:
                 ),
                 info_search AS (
                     SELECT 
-                        menu_title || ' > ' || part_title || ' > ' || section_title AS title, 
+                        menu_title || ' > ' || part_key AS title, 
                         content, 
                         source_url, 
                         NULL::date AS deadline, 

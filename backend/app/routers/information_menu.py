@@ -194,10 +194,9 @@ def _validate_part_row(row: InformationMenuPartRow) -> None:
 def _embedding_text(row: InformationMenuPartRow) -> str:
     return "\n".join(
         [
-            f"메뉴: {row.menuTitle}",
-            f"파트: {row.partKey}",
+            f"주제: {row.menuTitle}",
             f"내용: {row.content}",
-            f"링크: {row.sourceUrl or ''}",
+            f"참고 링크: {row.sourceUrl or ''}",
         ]
     )
 

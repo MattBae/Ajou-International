@@ -22,8 +22,7 @@ EMBEDDING_DIMENSIONS = 1536
 def embedding_text(row: InformationMenuPart) -> str:
     return "\n".join(
         [
-            f"메뉴: {row.menu_title}",
-            f"파트: {row.part_key}",
+            f"주제: {row.menu_title}",
             f"내용: {row.content}",
             f"링크: {row.source_url or ''}",
         ]
