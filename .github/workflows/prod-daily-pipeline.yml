@@ -5,6 +5,9 @@ on:
     - cron: "0 19 * * *"   # 04:00 KST daily
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   process-notices:
     runs-on: ubuntu-latest
