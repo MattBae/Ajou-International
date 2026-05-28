@@ -38,6 +38,10 @@ class AzanChatbotService:
             logger.error(f"Initialization Failed: {e}")
             raise e
 
+    async def warmup(self):
+        """챗봇 응답의 콜드 스타트를 방지하기 위해 VectorStore를 미리 워밍업함."""
+        await self.vector_store.warmup()
+
     def _get_session_memory(self, session_id: str) -> InMemoryChatMessageHistory:
         """세션 ID에 해당하는 메모리 객체 반환 (없으면 생성)"""
         if session_id not in self.sessions:
