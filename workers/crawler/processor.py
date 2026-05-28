@@ -20,6 +20,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# .env 로드
+from dotenv import load_dotenv
+load_dotenv(PROJECT_ROOT / "backend" / ".env")
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from sqlalchemy import select
@@ -37,7 +41,7 @@ from workers.rag.src.rag.RAG_config import settings
 class NoticeProcessor:
     def __init__(self):
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash", # 고속 처리를 위해 flash 모델 사용
+            model="gemini-3.5-flash", # 고속 처리를 위해 flash 모델 사용
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.1,
         )
