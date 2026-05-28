@@ -51,6 +51,33 @@ class VectorStore:
         except Exception as e:
             logger.error("커넥션 반납 실패: %s", e)
 
+    async def warmup(self):
+        """
+        초기 콜드 스타트 방지를 위한 워밍업. 
+        단순 쿼리를 실행하여 커넥션을 미리 생성하고 pgvector 인덱스를 예열한다.
+        """
+        logger.info("[VectorStore] Warming up connection pool and pgvector index...")
+        try:
+            # 비동기적으로 실행하기 위해 run_in_executor 스타일 (또는 to_thread) 사용
+            import asyncio
+            await asyncio.to_thread(self._dummy_search)
+            logger.info("[VectorStore] Warm-up successful.")
+        except Exception as e:
+            logger.warning(f"[VectorStore] Warm-up failed: {e}")
+
+    def _dummy_search(self):
+        """실제 DB에 단순 쿼리 실행"""
+        conn = None
+        try:
+            conn = self.get_connection()
+            with conn.cursor() as cursor:
+                # 테이블 존재 여부 확인 및 단순 쿼리
+                cursor.execute("SELECT 1 FROM notices LIMIT 1")
+                cursor.fetchone()
+        finally:
+            if conn:
+                self.release_connection(conn)
+
     def similarity_search(self, query: str, k: int = 3) -> List[Document]:
         """질문과 유사한 공지 및 정보 메뉴 검색. 커넥션 풀 사용."""
         conn = self.get_connection()

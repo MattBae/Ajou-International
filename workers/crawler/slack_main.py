@@ -27,8 +27,11 @@ from pathlib import Path
 # parents[0] = workers/crawler/
 # parents[1] = workers/
 _WORKERS_DIR = Path(__file__).resolve().parents[1]
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_WORKERS_DIR) not in sys.path:
     sys.path.insert(0, str(_WORKERS_DIR))
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 import argparse
 import logging
@@ -90,10 +93,10 @@ def main() -> None:
         inserted = 0
         skipped = 0
 
-        conn = db.get_connection()
+        session = db.get_session()
         try:
             for notice in notices:
-                result = db.upsert_notice(conn, notice)
+                result = db.upsert_notice(session, notice)
                 if result == "inserted":
                     inserted += 1
                     logger.info(
@@ -104,7 +107,7 @@ def main() -> None:
                 else:
                     skipped += 1
         finally:
-            conn.close()
+            session.close()
 
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

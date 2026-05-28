@@ -29,7 +29,9 @@ import sys
 from pathlib import Path
 
 _WORKERS_DIR = Path(__file__).resolve().parents[1]
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_WORKERS_DIR))
+sys.path.insert(0, str(_PROJECT_ROOT))
 
 # ── 표준 라이브러리 및 서드파티 임포트 ────────────────────────────────────────
 import argparse
