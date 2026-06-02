@@ -3,10 +3,10 @@ from dotenv import load_dotenv
 from pathlib import Path
 import sys
 
-env_path = Path("backend/.env")
+env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(PROJECT_ROOT))
 
 from backend.app.database import SessionLocal
