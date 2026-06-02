@@ -1,18 +1,22 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ActivityIndicator,
-  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  Keyboard,
 } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { chatbotService } from '../services/chatbot';
+import { useI18n } from '../i18n';
+import { useAppContext } from '../context/AppContext';
 
 interface Message {
   id: string;
@@ -24,43 +28,48 @@ interface Message {
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const headerHeight = 64 + insets.top; // Header height from _layout.tsx
   
+  const { selectedLanguage } = useAppContext();
+  const { translate } = useI18n(selectedLanguage);
+  
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
   // 세션 ID 초기화 (화면 진입 시마다 새로운 세션 생성)
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: '안녕하세요. 아주대학교 유학생을 돕는 안내 챗봇입니다. 오늘은 무엇을 도와드릴까요?',
-      sender: 'bot',
-      time: '방금',
-    },
-  ]);
-  const [inputText, setInputText] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const scrollViewRef = useRef<ScrollView>(null);
-  const inputBottom = keyboardVisible ? keyboardHeight : tabBarHeight;
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  React.useEffect(() => {
-    const showSubscription = Keyboard.addListener('keyboardDidShow', (event) => {
-      setKeyboardVisible(true);
-      setKeyboardHeight(event.endCoordinates.height);
-      requestAnimationFrame(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      });
-    });
-    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardVisible(false);
-      setKeyboardHeight(0);
-    });
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
 
     return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
+      showSub.remove();
+      hideSub.remove();
     };
   }, []);
+
+  // Initialize welcome message when language changes or on mount
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        {
+          id: '1',
+          text: translate('chat.welcome'),
+          sender: 'bot',
+          time: '방금',
+        },
+      ]);
+    }
+  }, [selectedLanguage]);
+
+  const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const handleSend = async (text: string = inputText) => {
     if (!text.trim() || loading) return;
@@ -88,94 +97,115 @@ export default function ChatScreen() {
     } catch {
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: '죄송합니다. 응답을 가져오는 중에 오류가 발생했습니다.',
+        text: translate('chat.error'),
         sender: 'bot',
         time: '방금',
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setLoading(false);
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   };
 
   return (
     <View style={styles.screen}>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.messages}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: 110 + inputBottom },
-        ]}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+      <KeyboardAvoidingView
+        style={styles.avoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}
       >
-        {messages.map((msg) => (
-          <View key={msg.id} style={msg.sender === 'user' ? styles.userRow : styles.botRow}>
-            {msg.sender === 'bot' && (
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messages}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: 20 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.map((msg) => (
+            <View key={msg.id} style={msg.sender === 'user' ? styles.userRow : styles.botRow}>
+              {msg.sender === 'bot' && (
+                <View style={styles.botAvatar}>
+                  <Text style={styles.botEmoji}>A</Text>
+                </View>
+              )}
+              <View style={msg.sender === 'user' ? styles.userBubble : styles.botBubble}>
+                <Text style={msg.sender === 'user' ? styles.userText : styles.botText}>
+                  {msg.text}
+                </Text>
+                <Text style={styles.timeText}>{msg.time}</Text>
+              </View>
+            </View>
+          ))}
+          {loading && (
+            <View style={styles.botRow}>
               <View style={styles.botAvatar}>
                 <Text style={styles.botEmoji}>A</Text>
               </View>
-            )}
-            <View style={msg.sender === 'user' ? styles.userBubble : styles.botBubble}>
-              <Text style={msg.sender === 'user' ? styles.userText : styles.botText}>
-                {msg.text}
-              </Text>
-              <Text style={styles.timeText}>{msg.time}</Text>
+              <View style={[styles.botBubble, { alignItems: 'center', justifyContent: 'center' }]}>
+                <ActivityIndicator size="small" color="#5B6FB8" />
+              </View>
             </View>
-          </View>
-        ))}
-        {loading && (
-          <View style={styles.botRow}>
-            <View style={styles.botAvatar}>
-              <Text style={styles.botEmoji}>A</Text>
-            </View>
-            <View style={[styles.botBubble, { alignItems: 'center', justifyContent: 'center' }]}>
-              <ActivityIndicator size="small" color="#5B6FB8" />
-            </View>
-          </View>
-        )}
+          )}
 
-        <Text style={styles.topicTitle}>자주 찾는 주제</Text>
-        <View style={styles.topicGrid}>
-          <TopicButton icon="card-outline" label="비자 신청" onPress={() => handleSend("비자 신청 방법 알려줘")} />
-          <TopicButton icon="school-outline" label="TOPIK 시험" onPress={() => handleSend("TOPIK 시험 일정 알려줘")} />
-          <TopicButton icon="reader-outline" label="수강신청" onPress={() => handleSend("수강신청 기간이 언제야?")} />
-          <TopicButton icon="briefcase-outline" label="아르바이트" onPress={() => handleSend("유학생 아르바이트 규칙 알려줘")} />
-        </View>
-      </ScrollView>
+          <Text style={styles.topicTitle}>{translate('chat.topicTitle')}</Text>
+          <View style={styles.topicGrid}>
+            <TopicButton 
+              icon="school-outline" 
+              label={translate('chat.topic.topik')} 
+              onPress={() => handleSend(translate('chat.topic.topikQuery'))} 
+            />
+            <TopicButton 
+              icon="card-outline" 
+              label={translate('chat.topic.visa')} 
+              onPress={() => handleSend(translate('chat.topic.visaQuery'))} 
+            />
+            <TopicButton 
+              icon="home-outline" 
+              label={translate('chat.topic.dorm')} 
+              onPress={() => handleSend(translate('chat.topic.dormQuery'))} 
+            />
+            <TopicButton 
+              icon="ribbon-outline" 
+              label={translate('chat.topic.scholarship')} 
+              onPress={() => handleSend(translate('chat.topic.scholarshipQuery'))} 
+            />
+          </View>
+        </ScrollView>
 
-      <View
-        style={[
-          styles.inputBar,
-          {
-            paddingBottom: Math.max(insets.bottom, 10),
-            bottom: inputBottom,
-          },
-        ]}
-      >
-        <TextInput
-          placeholder="질문을 입력하세요..."
-          placeholderTextColor="#98A2B3"
-          style={styles.input}
-          value={inputText}
-          onChangeText={setInputText}
-          onFocus={() =>
-            requestAnimationFrame(() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true });
-            })
-          }
-          onSubmitEditing={() => handleSend()}
-        />
-        <TouchableOpacity 
-          style={[styles.sendCircle, (!inputText.trim() || loading) && { backgroundColor: '#BDC7E0' }]} 
-          onPress={() => handleSend()}
-          disabled={!inputText.trim() || loading}
+        <View
+          style={[
+            styles.inputBar,
+            {
+              paddingBottom: 14,
+              marginBottom: isKeyboardVisible ? 0 : tabBarHeight,
+            },
+          ]}
         >
-          <Ionicons name="send" size={18} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+          <TextInput
+            placeholder={translate('chat.placeholder')}
+            placeholderTextColor="#98A2B3"
+            style={styles.input}
+            value={inputText}
+            onChangeText={setInputText}
+            onSubmitEditing={() => handleSend()}
+            multiline={false}
+          />
+          <TouchableOpacity 
+            style={[styles.sendCircle, (!inputText.trim() || loading) && { backgroundColor: '#BDC7E0' }]} 
+            onPress={() => handleSend()}
+            disabled={!inputText.trim() || loading}
+          >
+            <Ionicons name="send" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -199,6 +229,7 @@ function TopicButton({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F4F6FB' },
+  avoidingView: { flex: 1 },
   messages: { flex: 1 },
   content: { padding: 16 },
   botRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 12 },
@@ -214,7 +245,7 @@ const styles = StyleSheet.create({
   topicGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   topicButton: { width: '48%', backgroundColor: '#F7F8FF', borderWidth: 1, borderColor: '#D9E1FF', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 12, marginBottom: 10, flexDirection: 'row', alignItems: 'center' },
   topicText: { marginLeft: 8, fontSize: 13, color: '#4C5678', fontWeight: '600', flexShrink: 1 },
-  inputBar: { position: 'absolute', left: 0, right: 0, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E7E7F2', paddingHorizontal: 16, paddingTop: 10, zIndex: 20, elevation: 20 },
+  inputBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E7E7F2', paddingHorizontal: 16, paddingTop: 10, zIndex: 20, elevation: 20 },
   input: { flex: 1, backgroundColor: '#F4F6FB', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: '#334155' },
   sendCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#5B6FB8', alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
 });

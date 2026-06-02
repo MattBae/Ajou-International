@@ -29,8 +29,10 @@ const TOPIK_LEVEL_OPTIONS: TopikLevel[] = [
   'Level 6',
 ];
 const INTEREST_OPTIONS: InterestCategory[] = ['Visa', 'TOPIK', 'Admission', 'Scholarship', 'Life'];
-const ADMISSION_OPTIONS = ['March', 'June', 'September', 'December'] as const;
-type AdmissionTerm = (typeof ADMISSION_OPTIONS)[number];
+const ADMISSION_YEAR_OPTIONS = getAdmissionYearOptions();
+const ADMISSION_MONTH_OPTIONS = ['03', '06', '09', '12'] as const;
+type AdmissionMonth = (typeof ADMISSION_MONTH_OPTIONS)[number];
+const LANGUAGE_TERM_YEAR_OPTIONS = getLanguageTermYearOptions();
 const LANGUAGE_OPTIONS: LanguageOption[] = ['Korean', 'English'];
 const LANGUAGE_DETAILS: Record<LanguageOption, { label: string; flag: string }> = {
   Korean: { label: '\uD55C\uAD6D\uC5B4', flag: '\uD83C\uDDF0\uD83C\uDDF7' },
@@ -52,8 +54,22 @@ export default function ProfileSetupScreen() {
   const [nationality, setNationality] = useState('');
   const [currentStatus, setCurrentStatus] = useState<'Planned' | 'LanguageSchool'>('Planned');
   const [desiredMajor, setDesiredMajor] = useState('');
-  const [targetAdmissionTerm, setTargetAdmissionTerm] = useState<AdmissionTerm>('September');
-  const [languageSchoolSemester, setLanguageSchoolSemester] = useState('1');
+  const [targetAdmissionYear, setTargetAdmissionYear] = useState(() =>
+    String(new Date().getFullYear())
+  );
+  const [targetAdmissionMonth, setTargetAdmissionMonth] =
+    useState<AdmissionMonth>('09');
+  const [admissionMenuOpen, setAdmissionMenuOpen] = useState<
+    'year' | 'month' | null
+  >(null);
+  const [languageTermYear, setLanguageTermYear] = useState(() =>
+    String(new Date().getFullYear())
+  );
+  const [languageTermMonth, setLanguageTermMonth] =
+    useState<AdmissionMonth>('03');
+  const [languageTermMenuOpen, setLanguageTermMenuOpen] = useState<
+    'year' | 'month' | null
+  >(null);
   const [visaType, setVisaType] = useState<VisaType>('D-4');
   const [visaExpiryDate, setVisaExpiryDate] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
@@ -101,11 +117,20 @@ export default function ProfileSetupScreen() {
     if (isLastStep) {
       setLoading(true);
       try {
+        const targetAdmissionTerm = formatAdmissionTerm(
+          targetAdmissionYear,
+          targetAdmissionMonth
+        );
+        const languageSchoolSemester = formatLanguageTerm(
+          languageTermYear,
+          languageTermMonth
+        );
         const profileUpdate = {
           name: fullName,
           nationality,
           currentStatus,
           languageSchoolSemester,
+          languageInstituteTerm: languageSchoolSemester,
           desiredMajor,
           targetAdmissionTerm,
           visaType,
@@ -123,6 +148,7 @@ export default function ProfileSetupScreen() {
           nationality,
           currentStatus,
           languageSchoolSemester,
+          languageInstituteTerm: languageSchoolSemester,
           desiredMajor,
           targetAdmissionTerm,
           visaType,
@@ -289,53 +315,230 @@ export default function ProfileSetupScreen() {
           {currentStatus === 'Planned' ? (
             <View>
               <Text style={styles.groupTitle}>{t(selectedLanguage, 'auth.profile.admissionTargetLabel')}</Text>
-              <View style={styles.optionRowWrap}>
-                {ADMISSION_OPTIONS.map((term) => (
+              <View style={styles.admissionPickerRow}>
+                <View
+                  style={[
+                    styles.admissionPickerWrap,
+                    admissionMenuOpen === 'year' && styles.dropdownLayerTop,
+                  ]}
+                >
                   <TouchableOpacity
-                    key={term}
-                    style={[
-                      styles.statusOption,
-                      targetAdmissionTerm === term && styles.optionSelected,
-                    ]}
-                    onPress={() => setTargetAdmissionTerm(term)}
+                    style={styles.languagePickerButton}
+                    onPress={() =>
+                      setAdmissionMenuOpen((prev) =>
+                        prev === 'year' ? null : 'year'
+                      )
+                    }
                     activeOpacity={0.85}
                   >
-                    <Text
-                      style={[
-                        styles.statusOptionText,
-                        targetAdmissionTerm === term && styles.statusOptionTextActive,
-                      ]}
-                    >
-                      {getAdmissionTermLabel(selectedLanguage, term)}
-                    </Text>
+                    <Text style={styles.languagePickerText}>{targetAdmissionYear}</Text>
+                    <Ionicons
+                      name={admissionMenuOpen === 'year' ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color="#475569"
+                    />
                   </TouchableOpacity>
-                ))}
+
+                  {admissionMenuOpen === 'year' ? (
+                    <View style={styles.admissionDropdown}>
+                      {ADMISSION_YEAR_OPTIONS.map((year) => {
+                        const selected = targetAdmissionYear === year;
+
+                        return (
+                          <TouchableOpacity
+                            key={year}
+                            style={[
+                              styles.languageOption,
+                              selected && styles.languageOptionActive,
+                            ]}
+                            onPress={() => {
+                              setTargetAdmissionYear(year);
+                              setAdmissionMenuOpen(null);
+                            }}
+                            activeOpacity={0.85}
+                          >
+                            <Text style={styles.languageOptionText}>{year}</Text>
+                            {selected ? (
+                              <Ionicons name="checkmark" size={18} color="#1D4ED8" />
+                            ) : null}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </View>
+
+                <View
+                  style={[
+                    styles.admissionPickerWrap,
+                    admissionMenuOpen === 'month' && styles.dropdownLayerTop,
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={styles.languagePickerButton}
+                    onPress={() =>
+                      setAdmissionMenuOpen((prev) =>
+                        prev === 'month' ? null : 'month'
+                      )
+                    }
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.languagePickerText}>
+                      {getAdmissionMonthLabel(
+                        selectedLanguage,
+                        targetAdmissionMonth
+                      )}
+                    </Text>
+                    <Ionicons
+                      name={admissionMenuOpen === 'month' ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color="#475569"
+                    />
+                  </TouchableOpacity>
+
+                  {admissionMenuOpen === 'month' ? (
+                    <View style={styles.admissionDropdown}>
+                      {ADMISSION_MONTH_OPTIONS.map((month) => {
+                        const selected = targetAdmissionMonth === month;
+
+                        return (
+                          <TouchableOpacity
+                            key={month}
+                            style={[
+                              styles.languageOption,
+                              selected && styles.languageOptionActive,
+                            ]}
+                            onPress={() => {
+                              setTargetAdmissionMonth(month);
+                              setAdmissionMenuOpen(null);
+                            }}
+                            activeOpacity={0.85}
+                          >
+                            <Text style={styles.languageOptionText}>
+                              {getAdmissionMonthLabel(selectedLanguage, month)}
+                            </Text>
+                            {selected ? (
+                              <Ionicons name="checkmark" size={18} color="#1D4ED8" />
+                            ) : null}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </View>
               </View>
             </View>
           ) : (
             <View>
               <Text style={styles.groupTitle}>{t(selectedLanguage, 'auth.profile.languageSemesterLabel')}</Text>
-              <View style={styles.optionRowWrap}>
-                {['1', '2', '3', '4'].map((semester) => (
+              <View style={styles.admissionPickerRow}>
+                <View
+                  style={[
+                    styles.admissionPickerWrap,
+                    languageTermMenuOpen === 'year' && styles.dropdownLayerTop,
+                  ]}
+                >
                   <TouchableOpacity
-                    key={semester}
-                    style={[
-                      styles.statusOption,
-                      languageSchoolSemester === semester && styles.optionSelected,
-                    ]}
-                    onPress={() => setLanguageSchoolSemester(semester as any)}
+                    style={styles.languagePickerButton}
+                    onPress={() =>
+                      setLanguageTermMenuOpen((prev) =>
+                        prev === 'year' ? null : 'year'
+                      )
+                    }
                     activeOpacity={0.85}
                   >
-                    <Text
-                      style={[
-                        styles.statusOptionText,
-                        languageSchoolSemester === semester && styles.statusOptionTextActive,
-                      ]}
-                    >
-                      {semester}
-                    </Text>
+                    <Text style={styles.languagePickerText}>{languageTermYear}</Text>
+                    <Ionicons
+                      name={languageTermMenuOpen === 'year' ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color="#475569"
+                    />
                   </TouchableOpacity>
-                ))}
+
+                  {languageTermMenuOpen === 'year' ? (
+                    <View style={styles.admissionDropdown}>
+                      {LANGUAGE_TERM_YEAR_OPTIONS.map((year) => {
+                        const selected = languageTermYear === year;
+
+                        return (
+                          <TouchableOpacity
+                            key={year}
+                            style={[
+                              styles.languageOption,
+                              selected && styles.languageOptionActive,
+                            ]}
+                            onPress={() => {
+                              setLanguageTermYear(year);
+                              setLanguageTermMenuOpen(null);
+                            }}
+                            activeOpacity={0.85}
+                          >
+                            <Text style={styles.languageOptionText}>{year}</Text>
+                            {selected ? (
+                              <Ionicons name="checkmark" size={18} color="#1D4ED8" />
+                            ) : null}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </View>
+
+                <View
+                  style={[
+                    styles.admissionPickerWrap,
+                    languageTermMenuOpen === 'month' && styles.dropdownLayerTop,
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={styles.languagePickerButton}
+                    onPress={() =>
+                      setLanguageTermMenuOpen((prev) =>
+                        prev === 'month' ? null : 'month'
+                      )
+                    }
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.languagePickerText}>
+                      {getAdmissionMonthLabel(selectedLanguage, languageTermMonth)}
+                    </Text>
+                    <Ionicons
+                      name={languageTermMenuOpen === 'month' ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color="#475569"
+                    />
+                  </TouchableOpacity>
+
+                  {languageTermMenuOpen === 'month' ? (
+                    <View style={styles.admissionDropdown}>
+                      {ADMISSION_MONTH_OPTIONS.map((month) => {
+                        const selected = languageTermMonth === month;
+
+                        return (
+                          <TouchableOpacity
+                            key={month}
+                            style={[
+                              styles.languageOption,
+                              selected && styles.languageOptionActive,
+                            ]}
+                            onPress={() => {
+                              setLanguageTermMonth(month);
+                              setLanguageTermMenuOpen(null);
+                            }}
+                            activeOpacity={0.85}
+                          >
+                            <Text style={styles.languageOptionText}>
+                              {getAdmissionMonthLabel(selectedLanguage, month)}
+                            </Text>
+                            {selected ? (
+                              <Ionicons name="checkmark" size={18} color="#1D4ED8" />
+                            ) : null}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </View>
               </View>
             </View>
           )}
@@ -604,21 +807,33 @@ export default function ProfileSetupScreen() {
   );
 }
 
-function getAdmissionTermLabel(language: LanguageOption, value: AdmissionTerm) {
+function getAdmissionYearOptions() {
+  const startYear = new Date().getFullYear();
+  return Array.from({ length: 6 }, (_, index) => String(startYear + index));
+}
+
+function getLanguageTermYearOptions() {
+  const endYear = Math.max(new Date().getFullYear() + 5, 2029);
+  return Array.from(
+    { length: endYear - 2024 + 1 },
+    (_, index) => String(2024 + index)
+  );
+}
+
+function formatAdmissionTerm(year: string, month: AdmissionMonth) {
+  return `${year}.${month}`;
+}
+
+function formatLanguageTerm(year: string, month: AdmissionMonth) {
+  return `${year}.${month}`;
+}
+
+function getAdmissionMonthLabel(language: LanguageOption, value: AdmissionMonth) {
   if (language === 'English') {
-    return value;
+    return `${Number(value)} month`;
   }
 
-  switch (value) {
-    case 'March':
-      return '3월';
-    case 'June':
-      return '6월';
-    case 'September':
-      return '9월';
-    case 'December':
-      return '12월';
-  }
+  return `${Number(value)}월`;
 }
 
 function getWeekDays(language: LanguageOption) {
@@ -756,6 +971,32 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 330,
     position: 'relative',
+  },
+  admissionPickerRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+    zIndex: 20,
+  },
+  admissionPickerWrap: {
+    flex: 1,
+    position: 'relative',
+  },
+  dropdownLayerTop: {
+    zIndex: 30,
+  },
+  admissionDropdown: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D8E2F1',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
   languagePickerButton: {
     height: 44,

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import AlertOutbox, Keyword, Notice, UserKeyword
+from ..services.alert_service import queue_alerts_for_notice
 
 router = APIRouter(tags=["notices"])
 
@@ -41,42 +42,19 @@ def _preview_from_body(body: str) -> str:
     return compact[:140]
 
 
-
-def _queue_alerts_for_notice(db: Session, notice_uuid: UUIDType) -> int:
-    # 입력: db, notice_uuid
-    # 출력: int (큐에 적재된 알림 개수)
-    subscriber_rows = (
-        db.query(UserKeyword.user_id)
-        .join(Notice, Notice.keyword_id == UserKeyword.keyword_id)
-        .filter(Notice.id == notice_uuid)
-        .distinct()
-        .all()
-    )
-    user_ids = [row[0] for row in subscriber_rows]
-    if not user_ids:
-        return 0
-
-    stmt = pg_insert(AlertOutbox).values(
-        [{"user_id": user_id, "notice_id": notice_uuid, "status": "pending", "try_count": 0} for user_id in user_ids]
-    )
-    stmt = stmt.on_conflict_do_nothing(index_elements=["user_id", "notice_id"])
-    result = db.execute(stmt)
-    return int(result.rowcount or 0)
-
-
 @router.get("/notices")
 # 입력: keyword_id/q/limit/offset, DB 세션
 # 출력: dict (공지 목록 + 페이지 정보)
 def list_notices(
     keyword_id: Optional[int] = Query(default=None),
     q: Optional[str] = Query(default=None),
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=20, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
     query = (
         db.query(Notice)
-        .join(Keyword, Keyword.id == Notice.keyword_id)
+        .outerjoin(Keyword, Keyword.id == Notice.keyword_id)
         .filter(Notice.notice_id.isnot(None))
     )
 
@@ -101,6 +79,7 @@ def list_notices(
             Notice.title,
             Notice.preview,
             Notice.body,
+            Notice.eng_body,
             Notice.url,
             Notice.deadline,
             Notice.image_urls,
@@ -123,6 +102,7 @@ def list_notices(
                 "title": title,
                 "preview": preview,
                 "body": body,
+                "eng_body": eng_body,
                 "url": url,
                 "deadline": deadline,
                 "image_urls": image_urls or [],
@@ -133,6 +113,7 @@ def list_notices(
                 title,
                 preview,
                 body,
+                eng_body,
                 url,
                 deadline,
                 image_urls,
@@ -184,7 +165,7 @@ def create_notice(body: NoticeCreateRequest, db: Session = Depends(get_db)):
         db.add(notice)
         db.flush()
 
-        queued_count = _queue_alerts_for_notice(db, notice.id)
+        queued_count = queue_alerts_for_notice(db, notice.id)
         db.commit()
 
         return {
@@ -209,7 +190,7 @@ def create_notice(body: NoticeCreateRequest, db: Session = Depends(get_db)):
 def get_notice(notice_id: UUIDType, db: Session = Depends(get_db)):
     notice_row = (
         db.query(Notice, Keyword)
-        .join(Keyword, Keyword.id == Notice.keyword_id)
+        .outerjoin(Keyword, Keyword.id == Notice.keyword_id)
         .filter(Notice.id == notice_id)
         .one_or_none()
     )
@@ -228,6 +209,6 @@ def get_notice(notice_id: UUIDType, db: Session = Depends(get_db)):
         "deadline": notice.deadline,
         "image_urls": notice.image_urls or [],
         "keyword_id": notice.keyword_id,
-        "keyword": keyword_row.keyword,
+        "keyword": keyword_row.keyword if keyword_row else None,
         "published_at": notice.published_at,
     }

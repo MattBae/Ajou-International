@@ -3,6 +3,9 @@ name: Crawl Ajou Notices (NEON_DEV/수동)
 on:
   workflow_dispatch:   # 수동 트리거만
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   crawl:
     runs-on: ubuntu-latest

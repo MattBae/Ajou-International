@@ -38,6 +38,10 @@ class AzanChatbotService:
             logger.error(f"Initialization Failed: {e}")
             raise e
 
+    async def warmup(self):
+        """챗봇 응답의 콜드 스타트를 방지하기 위해 VectorStore를 미리 워밍업함."""
+        await self.vector_store.warmup()
+
     def _get_session_memory(self, session_id: str) -> InMemoryChatMessageHistory:
         """세션 ID에 해당하는 메모리 객체 반환 (없으면 생성)"""
         if session_id not in self.sessions:
@@ -45,27 +49,38 @@ class AzanChatbotService:
         return self.sessions[session_id]
 
     def _format_to_toon(self, docs):
-        """
-        검색된 문서들을 LLM이 이해하기 쉬운 Table(TOON) 형식으로 변환
-        """
+        """Format retrieved documents without truncating structured information."""
         if not docs:
-            return "관련된 공지사항 정보가 없습니다."
+            return "관련된 정보가 없습니다."
 
-        toon_text = "| Title | Deadline | Content Summary |\n"
-        toon_text += "|---|---|---|\n"
+        blocks = []
 
         for doc in docs:
             meta = doc.metadata
+            source_type = meta.get("source_type", "N/A")
             title = meta.get("title", "No Title")
-            deadline = meta.get("deadline_at", "N/A")
-            content = doc.page_content.replace("\n", " ")[:200]
+            deadline = meta.get("deadline_at") or meta.get("deadline") or "N/A"
+            content = doc.page_content.replace("\n", " ")
 
-            row = f"| {title} | {deadline} | {content}... |\n"
-            toon_text += row
+            blocks.append(
+                "\n".join(
+                    [
+                        f"[{source_type}] {title}",
+                        f"Deadline: {deadline}",
+                        "Content:",
+                        content,
+                    ]
+                )
+            )
 
-        return toon_text
+        return "\n\n---\n\n".join(blocks)
 
-    async def aget_response(self, question: str, session_id: str = "default_session") -> str:
+    async def aget_response(
+        self, 
+        question: str, 
+        session_id: str = "default_session",
+        user_info: str = "비공개"
+    ) -> str:
         """
         비동기 버전 응답 함수. 세션 ID별로 독립된 대화 기록을 유지함.
         """
@@ -88,6 +103,8 @@ class AzanChatbotService:
                     {"chat_history": chat_history, "question": question}
                 )
                 standalone_question = getattr(condense_result, "content", str(condense_result))
+                if isinstance(standalone_question, list):
+                    standalone_question = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in standalone_question])
                 logger.info(f"[Session: {session_id}] [Step 1] Condensing: '{question}' -> '{standalone_question}'")
             else:
                 standalone_question = question
@@ -101,7 +118,20 @@ class AzanChatbotService:
                 standalone_question,
                 settings.RETRIEVER_TOP_K,
             )
+            retrieved_docs = self._prioritize_intent_docs(standalone_question, retrieved_docs)
             t_search = loop.time() - t1
+
+            # 검색 결과 상세 로깅
+            if retrieved_docs:
+                logger.info(f"[Session: {session_id}] [Step 2] Retrieval Success: {len(retrieved_docs)} docs found.")
+                for i, doc in enumerate(retrieved_docs):
+                    meta = doc.metadata
+                    snippet = doc.page_content.replace("\n", " ")[:100]
+                    logger.info(
+                        f"  - Doc {i+1} [{meta.get('source_type')}]: {meta.get('title')} (Score: {meta.get('score', 'N/A'):.4f}) | Snippet: {snippet}..."
+                    )
+            else:
+                logger.warning(f"[Session: {session_id}] [Step 2] Retrieval Failed: No documents found.")
 
             context_text = self._format_to_toon(retrieved_docs) if retrieved_docs else "정보 없음"
 
@@ -111,6 +141,7 @@ class AzanChatbotService:
             answer_result = await answer_chain.ainvoke(
                 {
                     "system_instruction": SYSTEM_PROMPT,
+                    "user_info": user_info,
                     "chat_history": chat_history,
                     "context": context_text,
                     "question": question,
@@ -119,6 +150,8 @@ class AzanChatbotService:
             t_answer = loop.time() - t2
 
             response_text = getattr(answer_result, "content", str(answer_result))
+            if isinstance(response_text, list):
+                response_text = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in response_text])
 
             total_elapsed = loop.time() - started
 
@@ -138,9 +171,24 @@ class AzanChatbotService:
             logger.error(f"[Session: {session_id}] Error: {e}")
             return "오류가 발생했습니다."
 
-    def get_response(self, question: str) -> str:
+    def get_response(self, question: str, user_info: str = "비공개") -> str:
         """
         기존 동기 인터페이스 유지용 래퍼.
         (CLI 테스트 등에서는 이 함수를 그대로 사용)
         """
-        return asyncio.run(self.aget_response(question))
+        return asyncio.run(self.aget_response(question, user_info=user_info))
+
+    def _prioritize_intent_docs(self, question: str, docs: List[Any]) -> List[Any]:
+        if not docs:
+            return docs
+
+        normalized = question.lower()
+        schedule_terms = ("일정", "시험일", "접수기간", "성적발표", "성적 발표", "schedule", "date")
+        is_schedule_question = any(term in normalized for term in schedule_terms)
+        if not is_schedule_question:
+            return docs
+
+        schedule_docs = [
+            doc for doc in docs if "schedule" in (doc.metadata.get("title") or "").lower()
+        ]
+        return schedule_docs or docs

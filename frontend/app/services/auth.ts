@@ -38,7 +38,6 @@ export const authService = {
       desired_major: profile.desiredMajor,
       visa_type: profile.visaType,
       visa_expiry_date: profile.visaExpiryDate && profile.visaExpiryDate.trim() !== '' ? profile.visaExpiryDate : null,
-      visa_expiry_unknown: profile.visaExpiryUnknown,
       topik_status: profile.topikStatus,
       topik_level: profile.topikLevel,
       topik_target_level: profile.topikTargetLevel,

@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCategoryLabel, t } from '../i18n';
 import { useAppContext } from '../context/AppContext';
+import { NoticeImage } from '../components/notices/NoticeImage';
 
 export default function NoticeDetailScreen() {
   const router = useRouter();
@@ -39,10 +40,11 @@ export default function NoticeDetailScreen() {
     );
   }
 
-  const formattedDescription = formatNoticeDescription(
-    notice.description,
-    notice.hasAttachmentOnly
-  );
+  const bodyToShow =
+    selectedLanguage === 'English' && notice.engBody
+      ? notice.engBody
+      : notice.description;
+  const formattedDescription = formatNoticeDescription(bodyToShow, notice.hasAttachmentOnly);
 
   return (
     <ScrollView
@@ -122,11 +124,11 @@ export default function NoticeDetailScreen() {
             {selectedLanguage === 'Korean' ? '이미지' : 'Images'}
           </Text>
           {notice.imageUrls.map((imageUrl) => (
-            <Image
+            <NoticeImage
               key={imageUrl}
-              source={{ uri: imageUrl }}
+              uri={imageUrl}
               style={styles.noticeImage}
-              resizeMode="cover"
+              fallbackHeight={220}
             />
           ))}
         </View>
@@ -288,9 +290,7 @@ const styles = StyleSheet.create({
   },
   noticeImage: {
     width: '100%',
-    height: 220,
     borderRadius: 10,
-    backgroundColor: '#E2E8F0',
     marginBottom: 10,
   },
   linkText: {

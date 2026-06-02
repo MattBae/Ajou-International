@@ -1,11 +1,19 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import Constants from 'expo-constants';
+import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider, useAppContext } from './context/AppContext';
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* reloading the app might cause some errors here, safe to ignore */
+});
 
 function RootLayoutNav() {
   const { userProfileStatus, isAuthInitialized } = useAppContext();
   const segments = useSegments();
   const router = useRouter();
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
 
   useEffect(() => {
     if (!isAuthInitialized) return;
@@ -20,9 +28,14 @@ function RootLayoutNav() {
       // 인증되었는데 인증 페이지에 있으면 메인으로
       router.replace('/(tabs)');
     }
+    
+    // Once auth is initialized and we have performed initial redirection,
+    // we can hide the splash screen.
+    SplashScreen.hideAsync().catch(() => {});
+    setIsNavigationReady(true);
   }, [isAuthInitialized, userProfileStatus.email, segments, router]);
 
-  if (!isAuthInitialized) return null;
+  if (!isAuthInitialized || !isNavigationReady) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -41,6 +54,27 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    if (Constants.appOwnership === 'expo') return;
+
+    async function configureNotifications() {
+      const Notifications = await import('expo-notifications');
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    }
+
+    configureNotifications().catch((error) => {
+      console.warn('[Notifications] handler setup skipped', error);
+    });
+  }, []);
+
   return (
     <AppProvider>
       <RootLayoutNav />

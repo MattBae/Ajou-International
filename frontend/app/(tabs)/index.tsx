@@ -27,7 +27,7 @@ export default function HomeScreen() {
     statusCheckedAt,
   } = useAppContext();
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = formatDateKey(new Date());
   const recentStartKey = getPastDateKey(6);
   const { weekStartKey, weekEndKey } = getCurrentWeekBounds();
   const urgentKey = getFutureDateKey(2);
@@ -41,9 +41,20 @@ export default function HomeScreen() {
     })
     .sort((a, b) => normalizeDateKey(b.date).localeCompare(normalizeDateKey(a.date)));
 
-  const todayDeadlines = savedNoticeReminders.filter(
-    (item) => item.dueDate === todayKey
-  );
+  const weeklyDeadlineNotices = notices
+    .filter((notice) => {
+      if (!notice.deadline) return false;
+
+      const deadlineKey = normalizeDateKey(notice.deadline);
+      return deadlineKey >= weekStartKey && deadlineKey <= weekEndKey;
+    })
+    .sort((a, b) => {
+      const deadlineCompare = normalizeDateKey(a.deadline || '').localeCompare(
+        normalizeDateKey(b.deadline || '')
+      );
+      if (deadlineCompare !== 0) return deadlineCompare;
+      return a.title.localeCompare(b.title);
+    });
 
   const weeklyTasks: HomeReminderItem[] = savedNoticeReminders
     .filter((item) => item.dueDate >= weekStartKey && item.dueDate <= weekEndKey)
@@ -78,33 +89,41 @@ export default function HomeScreen() {
     <View style={styles.screen}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.highlightCard}>
-          <Text style={styles.sectionLabel}>
-            {t(selectedLanguage, 'home.todayDeadlines')}
-          </Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionLabel}>
+              {t(selectedLanguage, 'home.todayDeadlines')}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => router.push('/notices')}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+              <Text style={styles.moreText}>{t(selectedLanguage, 'home.more')}</Text>
+            </TouchableOpacity>
+          </View>
 
-          {todayDeadlines.length > 0 ? (
-            todayDeadlines.map((reminder) => (
+          {weeklyDeadlineNotices.length > 0 ? (
+            weeklyDeadlineNotices.slice(0, 3).map((notice) => (
               <TouchableOpacity
-                key={reminder.id}
-                style={[styles.taskRow, styles.todayDeadlineRow, reminder.isDone && styles.todayDeadlineRowDone]}
-                onPress={() => router.push({ pathname: '/notices/[id]', params: { id: reminder.noticeId } })}
+                key={notice.id}
+                style={[styles.taskRow, styles.weeklyDeadlineRow]}
+                onPress={() => router.push({ pathname: '/notices/[id]', params: { id: notice.id } })}
                 activeOpacity={0.8}
               >
                 <View style={styles.checkBox}>
                   <Ionicons
-                    name={reminder.isDone ? 'checkmark-circle' : 'alarm-outline'}
+                    name={normalizeDateKey(notice.deadline || '') <= todayKey ? 'alert-circle' : 'alarm-outline'}
                     size={24}
-                    color={reminder.isDone ? '#7C6F3A' : '#8A6F00'}
+                    color={normalizeDateKey(notice.deadline || '') <= todayKey ? '#B45309' : '#8A6F00'}
                   />
                 </View>
 
                 <View style={styles.rowTextWrap}>
-                  <Text style={[styles.taskTitle, reminder.isDone && styles.taskTitleDone]}>
-                    {reminder.title}
+                  <Text style={styles.taskTitle}>
+                    {notice.title}
                   </Text>
-                  <Text style={[styles.taskDate, reminder.isDone && styles.taskDateDone]}>
-                    {getCategoryLabel(selectedLanguage, reminder.category)} -{' '}
-                    {t(selectedLanguage, 'notices.deadline')} {reminder.dueDate}
+                  <Text style={styles.taskDate}>
+                    {getCategoryLabel(selectedLanguage, notice.category)} -{' '}
+                    {t(selectedLanguage, 'notices.deadline')} {notice.deadline}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -117,12 +136,20 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            {t(selectedLanguage, 'home.todayNotices')}
-          </Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>
+              {t(selectedLanguage, 'home.todayNotices')}
+            </Text>
+            <TouchableOpacity 
+              onPress={() => router.push('/notices')}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+              <Text style={styles.moreText}>{t(selectedLanguage, 'home.more')}</Text>
+            </TouchableOpacity>
+          </View>
 
           {weeklyNotices.length > 0 ? (
-            weeklyNotices.map((item) => (
+            weeklyNotices.slice(0, 3).map((item) => (
               <TouchableOpacity
                 key={item.id}
                 style={styles.noticeItem}
@@ -270,13 +297,13 @@ export default function HomeScreen() {
 function getFutureDateKey(daysFromToday: number) {
   const date = new Date();
   date.setDate(date.getDate() + daysFromToday);
-  return date.toISOString().slice(0, 10);
+  return formatDateKey(date);
 }
 
 function getPastDateKey(daysBeforeToday: number) {
   const date = new Date();
   date.setDate(date.getDate() - daysBeforeToday);
-  return date.toISOString().slice(0, 10);
+  return formatDateKey(date);
 }
 
 function getCurrentWeekBounds() {
@@ -290,13 +317,20 @@ function getCurrentWeekBounds() {
   sunday.setDate(monday.getDate() + 6);
 
   return {
-    weekStartKey: monday.toISOString().slice(0, 10),
-    weekEndKey: sunday.toISOString().slice(0, 10),
+    weekStartKey: formatDateKey(monday),
+    weekEndKey: formatDateKey(sunday),
   };
 }
 
 function normalizeDateKey(dateText: string) {
   return dateText.slice(0, 10);
+}
+
+function formatDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 const styles = StyleSheet.create({
@@ -324,7 +358,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#2B2B2B',
-    marginBottom: 14,
+    marginBottom: 0,
+  },
+  moreText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
   },
   noticeItem: {
     marginBottom: 12,
@@ -416,13 +455,10 @@ const styles = StyleSheet.create({
   taskRowDone: {
     backgroundColor: '#F0FAFF',
   },
-  todayDeadlineRow: {
+  weeklyDeadlineRow: {
     backgroundColor: '#FFF8D8',
     shadowColor: '#7C6F3A',
     shadowOpacity: 0.08,
-  },
-  todayDeadlineRowDone: {
-    backgroundColor: '#FFF4BF',
   },
   checkBox: {
     marginRight: 12,

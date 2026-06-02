@@ -126,7 +126,7 @@ def crawl_source(source_config: dict) -> dict:
     """
     sources.json 의 소스 항목 하나에 대해 전체 크롤 파이프라인을 실행한다.
 
-    소스 실행 전체에 걸쳐 DB connection 하나를 열고 finally 블록에서 닫는다.
+    소스 실행 전체에 걸쳐 DB session 하나를 열고 finally 블록에서 닫는다.
     각 페이지 요청은 독립적이며, 실패한 페이지는 로그에 기록 후 skip되고 실행을 중단하지 않는다.
     각 공지는 개별 try/except로 감싸져 있어 하나의 불량 행이 나머지를 중단시킬 수 없다.
 
@@ -149,7 +149,7 @@ def crawl_source(source_config: dict) -> dict:
     skipped = 0
     notice_counter = 0
 
-    conn = db.get_connection()
+    session = db.get_session()
     try:
         for page_idx in range(pages_per_run):
             offset = page_idx * 10
@@ -202,7 +202,7 @@ def crawl_source(source_config: dict) -> dict:
                     ).hexdigest()
 
                     # 새로운 공지일 때만 상세 본문과 이미지를 fetch하여 불필요한 HTTP 요청을 방지
-                    if db.notice_exists(conn, notice_id):
+                    if db.notice_exists(session, notice_id):
                         body = None
                         r2_urls: list[str] = []
                         print("    → 이미지 스킵 (공지 중복)", flush=True)
@@ -224,7 +224,7 @@ def crawl_source(source_config: dict) -> dict:
                         "image_urls": r2_urls,
                     }
 
-                    result = db.upsert_notice(conn, notice_dict)
+                    result = db.upsert_notice(session, notice_dict)
                     if result == "inserted":
                         inserted += 1
                         print(f"    → DB 저장 성공: {notice_id} | {title_preview}", flush=True)
@@ -237,6 +237,6 @@ def crawl_source(source_config: dict) -> dict:
                     )
 
     finally:
-        conn.close()
+        session.close()
 
     return {"inserted": inserted, "skipped": skipped}

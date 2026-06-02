@@ -1,4 +1,6 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { fetchNotices } from '../services/notices';
 import { authService } from '../services/auth';
 import { getToken } from '../services/api';
@@ -20,14 +22,13 @@ const initialUserProfileStatus: UserProfileStatus = {
   email: '',
   nationality: '',
   currentStatus: 'Planned',
-  languageSchoolSemester: '1',
+  languageSchoolSemester: '2026.03',
   languageInstituteStatus: 'Planned',
-  languageInstituteTerm: 'Term 1',
-  targetAdmissionTerm: 'September',
+  languageInstituteTerm: '2026.03',
+  targetAdmissionTerm: '2026.09',
   desiredMajor: '',
   visaType: 'D-2',
   visaExpiryDate: '',
-  visaExpiryUnknown: false,
   topikStatus: 'None',
   topikLevel: 'Level 4',
   topikTargetLevel: 'Level 4',
@@ -36,6 +37,32 @@ const initialUserProfileStatus: UserProfileStatus = {
   preferredLanguage: 'Korean',
   residenceType: 'Dormitory',
 };
+
+export async function registerPushToken(): Promise<void> {
+  const Device = await import('expo-device');
+  const Notifications = await import('expo-notifications');
+
+  if (!Device.isDevice) return;
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  const { status } = existing === 'granted'
+    ? { status: existing }
+    : await Notifications.requestPermissionsAsync();
+
+  if (status !== 'granted') return;
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+    });
+  }
+
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+  const { data: token } = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+  console.log('[PushToken]', token);
+  await authService.updatePushToken(token);
+}
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -63,6 +90,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         const me = await authService.getMe();
+        registerPushToken().catch(e => console.warn('[PushToken] registration failed', e));
         if (me) {
           const profileData: UserProfileStatus = {
             ...initialUserProfileStatus,
@@ -74,7 +102,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             desiredMajor: (me as any).desired_major || initialUserProfileStatus.desiredMajor,
             visaType: (me as any).visa_type || initialUserProfileStatus.visaType,
             visaExpiryDate: (me as any).visa_expiry_date || initialUserProfileStatus.visaExpiryDate,
-            visaExpiryUnknown: (me as any).visa_expiry_unknown ?? initialUserProfileStatus.visaExpiryUnknown,
             topikStatus: (me as any).topik_status || initialUserProfileStatus.topikStatus,
             topikLevel: (me as any).topik_level || initialUserProfileStatus.topikLevel,
             topikTargetLevel: (me as any).topik_target_level || initialUserProfileStatus.topikTargetLevel,
@@ -152,7 +179,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           desiredMajor: (me as any).desired_major || initialUserProfileStatus.desiredMajor,
           visaType: (me as any).visa_type || initialUserProfileStatus.visaType,
           visaExpiryDate: (me as any).visa_expiry_date || initialUserProfileStatus.visaExpiryDate,
-          visaExpiryUnknown: (me as any).visa_expiry_unknown ?? initialUserProfileStatus.visaExpiryUnknown,
           topikStatus: (me as any).topik_status || initialUserProfileStatus.topikStatus,
           topikLevel: (me as any).topik_level || initialUserProfileStatus.topikLevel,
           topikTargetLevel: (me as any).topik_target_level || initialUserProfileStatus.topikTargetLevel,

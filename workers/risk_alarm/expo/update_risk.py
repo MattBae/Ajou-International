@@ -25,7 +25,7 @@ from sqlalchemy import create_engine, text
 
 # Allow sibling imports when run as a script
 sys.path.insert(0, str(Path(__file__).parent))
-from msg_templates import TOPIK_TEMPLATES, VISA_TEMPLATES
+from msg_templates import get_topik_msg, get_visa_msg, load_templates
 
 load_dotenv()
 
@@ -121,6 +121,7 @@ def _should_send_topik(
 
 def main() -> None:
     engine = _get_engine()
+    load_templates(engine)
     today = date.today()
     days_to_deadline = (D2_DEADLINE - today).days
 
@@ -133,7 +134,8 @@ def main() -> None:
                     visa_expiry_date,
                     topik_level,
                     visa_last_notified_at,
-                    topik_last_notified_at
+                    topik_last_notified_at,
+                    preferred_language
                 FROM users
                 WHERE visa_expiry_date IS NOT NULL
                    OR visa_type = 'D-4'
@@ -163,6 +165,7 @@ def main() -> None:
 
             for row in rows:
                 uid = str(row.id)
+                lang = row.preferred_language or "English"
                 visa_risk: int | None = None
                 topik_risk: int | None = None
 
@@ -173,9 +176,7 @@ def main() -> None:
 
                     if FORCE_SEND or _should_send_visa(visa_risk, days_left, row.visa_last_notified_at, today):
                         if (uid, "visa") not in pending_set:
-                            msg = VISA_TEMPLATES[visa_risk]
-                            if visa_risk == 2:
-                                msg = msg.format(days_left=days_left)
+                            msg = get_visa_msg(lang, visa_risk, days_left)
                             outbox_inserts.append({
                                 "user_id": uid,
                                 "payload": json.dumps({
@@ -207,7 +208,7 @@ def main() -> None:
                                 "payload": json.dumps({
                                     "alert_type": "topik",
                                     "risk_level": topik_risk,
-                                    "message": TOPIK_TEMPLATES[topik_risk],
+                                    "message": get_topik_msg(lang, topik_risk),
                                 }),
                             })
 
@@ -217,25 +218,27 @@ def main() -> None:
                     "topik_risk": topik_risk,
                 })
 
-            # Bulk UPDATE risk scores
-            if user_risk_updates:
+            # Bulk UPDATE risk scores (skipped in FORCE_SEND / test mode)
+            if user_risk_updates and not FORCE_SEND:
                 conn.execute(
                     text("""
                         UPDATE users
                         SET visa_risk  = :visa_risk,
                             topik_risk = :topik_risk
-                        WHERE id = :id::uuid
+                        WHERE id = :id
                     """),
                     user_risk_updates,
                 )
                 log.info("Updated risk scores for %d user(s).", len(user_risk_updates))
+            elif FORCE_SEND:
+                log.info("FORCE_SEND=true — skipping visa_risk/topik_risk column update.")
 
             # Bulk INSERT outbox rows for users that meet send threshold
             if outbox_inserts:
                 conn.execute(
                     text("""
                         INSERT INTO alert_outbox (user_id, status, try_count, payload)
-                        VALUES (:user_id::uuid, 'pending', 0, :payload::jsonb)
+                        VALUES (CAST(:user_id AS uuid), 'pending', 0, CAST(:payload AS jsonb))
                     """),
                     outbox_inserts,
                 )
