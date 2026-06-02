@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Azan",
-    "slug": "azan",
+    "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -22,7 +22,7 @@
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
-      "package": "com.mattbaa.azan"
+      "package": "com.mattbaa.frontend"
     },
     "web": {
       "output": "static",
