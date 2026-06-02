@@ -20,13 +20,14 @@ NOTICES_PER_KEYWORD = 2
 
 
 def fetch_users_with_keywords(conn):
-    """expo_push_token이 있는 사용자와 구독 키워드 조회"""
+    """expo_push_token이 있는 사용자와 구독 키워드, 선호 언어 조회"""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT
-                u.id        AS user_id,
+                u.id                AS user_id,
                 u.expo_push_token,
-                k.id        AS keyword_id,
+                u.preferred_language,
+                k.id                AS keyword_id,
                 k.keyword
             FROM users u
             JOIN user_keywords uk ON uk.user_id = u.id
@@ -40,10 +41,10 @@ def fetch_users_with_keywords(conn):
 
 
 def fetch_random_notices(conn, keyword_id, limit=NOTICES_PER_KEYWORD):
-    """키워드 ID에 해당하는 공지 랜덤 N개 조회"""
+    """키워드 ID에 해당하는 공지 랜덤 N개 조회 (eng_body 포함)"""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
-            SELECT id, title, preview
+            SELECT id, title, preview, eng_body
             FROM notices
             WHERE keyword_id = %s
               AND title IS NOT NULL
@@ -75,9 +76,15 @@ def build_messages(rows, conn):
             print(f"  [{keyword}] 해당 공지 없음, 건너뜀")
             continue
 
+        is_english = (row.get("preferred_language") or "").lower() == "english"
+
         for notice in notices:
             title_text = (notice["title"] or "새 공지사항")[:60]
-            body_text = (notice["preview"] or title_text)[:120]
+
+            if is_english and notice.get("eng_body"):
+                body_text = notice["eng_body"][:120]
+            else:
+                body_text = (notice["preview"] or title_text)[:120]
 
             messages.append({
                 "to": token,
@@ -86,7 +93,7 @@ def build_messages(rows, conn):
                 "sound": "default",
                 "data": {"notice_id": str(notice["id"])},
             })
-            print(f"  [{keyword}] {title_text[:40]}...")
+            print(f"  [{keyword}] {'(EN)' if is_english else '(KO)'} {title_text[:40]}...")
 
     return messages
 
