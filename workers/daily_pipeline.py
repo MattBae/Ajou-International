@@ -20,6 +20,8 @@ if str(PROJECT_ROOT) not in sys.path:
 # .env 로드
 from dotenv import load_dotenv
 load_dotenv(PROJECT_ROOT / "backend" / ".env")
+load_dotenv(PROJECT_ROOT / "workers" / ".env", override=True)
+load_dotenv(PROJECT_ROOT / ".env", override=True)
 
 # 각 모듈 임포트
 from workers.crawler.main import main as run_crawler

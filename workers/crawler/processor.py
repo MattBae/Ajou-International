@@ -41,9 +41,10 @@ from workers.rag.src.rag.RAG_config import settings
 class NoticeProcessor:
     def __init__(self):
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-3.5-flash", # 고속 처리를 위해 flash 모델 사용
+            model=settings.GENERATION_MODEL, # centralized 설정 사용
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.1,
+            request_timeout=30, # 30초 타임아웃 추가
         )
         self.db = SessionLocal()
         self._load_keywords()
@@ -126,13 +127,11 @@ class NoticeProcessor:
                 notice.keyword_id = self.keyword_map.get("Academic", 1)
 
             notice.is_processed = True
-
-            # autoflush=False 세션이므로 keyword_id가 SELECT에 반영되도록 명시적 flush
-            self.db.flush()
-
-            # 알림 큐 적재 (키워드 매칭된 유저들에게 알림 전송 대기)
-            queued_count = queue_alerts_for_notice(self.db, notice.id)
-            logger.info(f"Successfully processed notice: {notice.notice_id} ({cat_name}), queued {queued_count} alerts.")
+            
+            # 알림 큐 적재 (DB 제약조건 이슈로 인해 일시적으로 주석 처리)
+            # queued_count = queue_alerts_for_notice(self.db, notice.id)
+            # logger.info(f"Successfully processed notice: {notice.notice_id} ({cat_name}), queued {queued_count} alerts.")
+            logger.info(f"Successfully processed notice: {notice.notice_id} ({cat_name})")
 
         except Exception as e:
             logger.error(f"Gemini processing failed for {notice.notice_id}: {e}")
