@@ -45,3 +45,4 @@ jobs:
           REQUEST_DELAY_SECONDS: ${{ inputs.delay_seconds }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: python workers/manual_trans_notice_Eng.py
+        

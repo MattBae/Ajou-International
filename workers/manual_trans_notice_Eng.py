@@ -62,6 +62,20 @@ Return ONLY a valid JSON object with exactly one key:
 Korean Body: {body}
 """)
 
+_PROMPT_DEADLINE = ChatPromptTemplate.from_template("""
+You are an assistant for Ajou University International Students.
+Analyze the following Korean notice and extract the main application/submission deadline.
+
+Look for phrases indicating a deadline such as:
+- 마감, 제출 기한, 신청 기간, 접수 기간, ~까지, 모집 기간, 지원 기간
+
+Return ONLY a valid JSON object with exactly one key:
+- "deadline": the deadline date in YYYY-MM-DD format, or null if no clear deadline is found.
+
+Korean Title: {title}
+Korean Body: {body}
+""")
+
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
@@ -94,6 +108,7 @@ def _save(
     row_id,
     title_eng: str | None,
     eng_body: str | None,
+    deadline: str | None = None,
 ) -> psycopg2.extensions.connection:
     """UPDATE the notice row, reconnecting once on OperationalError."""
     for attempt in range(2):
@@ -106,10 +121,11 @@ def _save(
                     UPDATE notices
                     SET
                         title_eng = COALESCE(title_eng, %s),
-                        eng_body  = COALESCE(eng_body,  %s)
+                        eng_body  = COALESCE(eng_body,  %s),
+                        deadline  = COALESCE(deadline,  %s::date)
                     WHERE id = %s
                     """,
-                    (title_eng, eng_body, row_id),
+                    (title_eng, eng_body, deadline, row_id),
                 )
             conn.commit()
             return conn
@@ -163,6 +179,17 @@ def translate_body(llm, body: str) -> str | None:
     return _str_or_none(data.get("eng_body"))
 
 
+def extract_deadline(llm, title: str, body: str) -> str | None:
+    """deadline 이 NULL일 때 — title+body에서 마감일 추출."""
+    chain = _PROMPT_DEADLINE | llm
+    response = chain.invoke({"title": title, "body": body or ""})
+    data = _parse_response(response.content)
+    value = data.get("deadline")
+    if not value or str(value).lower() in ("null", "none", ""):
+        return None
+    return str(value).strip()
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -182,9 +209,9 @@ def main():
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             cur.execute(
                 """
-                SELECT id, title, body, title_eng, eng_body
+                SELECT id, title, body, title_eng, eng_body, deadline
                 FROM notices
-                WHERE title_eng IS NULL OR eng_body IS NULL
+                WHERE title_eng IS NULL OR eng_body IS NULL OR deadline IS NULL
                 ORDER BY published_at DESC
                 LIMIT %s
                 """,
@@ -193,7 +220,7 @@ def main():
             rows = cur.fetchall()
 
         total = len(rows)
-        logger.info(f"Found {total} notices to translate (batch limit: {BATCH_SIZE}).")
+        logger.info(f"Found {total} notices to process (batch limit: {BATCH_SIZE}).")
 
         if total == 0:
             logger.info("Nothing to do. Exiting.")
@@ -208,10 +235,15 @@ def main():
             body = row["body"] or ""
             existing_title_eng = row["title_eng"]
             existing_eng_body = row["eng_body"]
+            existing_deadline = row["deadline"]
+
+            need_title = existing_title_eng is None
+            need_body = existing_eng_body is None
+            need_deadline = existing_deadline is None
 
             logger.info(
                 f"[{i}/{total}] {notice_id} | "
-                f"needs: title_eng={existing_title_eng is None}, eng_body={existing_eng_body is None}"
+                f"needs: title_eng={need_title}, eng_body={need_body}, deadline={need_deadline}"
             )
             logger.info(f"  KR title: {title[:80]}")
 
@@ -220,23 +252,33 @@ def main():
                     logger.info("  [dry-run] skipping API call and DB update.")
                     success += 1
                 else:
-                    need_title = existing_title_eng is None
-                    need_body = existing_eng_body is None
-
-                    # 필요한 필드만 Gemini 호출
+                    # ── Translation ───────────────────────────────────────────
                     if need_title and need_body:
                         title_eng, eng_body = translate_both(llm, title, body)
                         logger.info("  translated: title + body")
                     elif need_title:
                         title_eng = translate_title(llm, title)
-                        eng_body = existing_eng_body   # 기존 값 유지
+                        eng_body = existing_eng_body
                         logger.info("  translated: title only (body already exists)")
-                    else:
+                    elif need_body:
                         eng_body = translate_body(llm, body)
-                        title_eng = existing_title_eng  # 기존 값 유지
+                        title_eng = existing_title_eng
                         logger.info("  translated: body only (title already exists)")
+                    else:
+                        title_eng = existing_title_eng
+                        eng_body = existing_eng_body
 
-                    conn = _save(conn, row["id"], title_eng, eng_body)
+                    # ── Deadline extraction ───────────────────────────────────
+                    if need_deadline:
+                        deadline = extract_deadline(llm, title, body)
+                        if deadline:
+                            logger.info(f"  extracted deadline: {deadline}")
+                        else:
+                            logger.info("  no deadline found in notice")
+                    else:
+                        deadline = None  # COALESCE will keep the existing DB value
+
+                    conn = _save(conn, row["id"], title_eng, eng_body, deadline)
                     logger.info(f"  EN title: {(title_eng or '')[:80]}")
                     success += 1
 
